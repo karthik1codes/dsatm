@@ -9,6 +9,10 @@ let settings = {
     difficulty: 'easy'
 };
 let currentCategory = 'general';
+const GOOGLE_CLIENT_ID = '369705995460-d2f937r1bj3963upbmob113ngkf5v6og.apps.googleusercontent.com';
+const AUTH_STORAGE_KEY = 'brightwords_google_user';
+let currentUser = null;
+let hasWelcomedUser = false;
 
 const supportProfiles = {
     general: {
@@ -1048,14 +1052,10 @@ window.addEventListener('load', () => {
         });
     }
 
-    // Welcome message
-    setTimeout(() => {
-        speak('Welcome to BrightWords! Let\'s make learning fun!');
-    }, 1000);
-
     syncSettingsUI();
     selectSupportCategory('general', true);
     initMotionCarousel();
+    bootstrapAuth();
 
     // Animate stats on load
     const statValues = document.querySelectorAll('.stat-value');
@@ -1078,4 +1078,197 @@ window.addEventListener('load', () => {
         }, 500);
     });
 });
+
+function bootstrapAuth() {
+    restoreSession();
+    registerSignOut();
+    waitForGoogleClient(initializeGoogleAuth);
+}
+
+function waitForGoogleClient(callback, attempt = 0) {
+    if (window.google?.accounts?.id) {
+        callback();
+        return;
+    }
+
+    if (attempt > 100) {
+        console.warn('Google Identity Services failed to load.');
+        return;
+    }
+
+    setTimeout(() => waitForGoogleClient(callback, attempt + 1), 150);
+}
+
+function initializeGoogleAuth() {
+    const buttonContainer = document.getElementById('googleSignInButton');
+    if (!buttonContainer || !window.google?.accounts?.id) return;
+
+    buttonContainer.innerHTML = '';
+    window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+        cancel_on_tap_outside: true
+    });
+
+    window.google.accounts.id.renderButton(buttonContainer, {
+        theme: 'filled_blue',
+        size: 'large',
+        shape: 'pill',
+        type: 'standard',
+        text: 'continue_with',
+        width: 260
+    });
+
+    if (!currentUser) {
+        window.google.accounts.id.prompt();
+    }
+}
+
+function handleCredentialResponse(response) {
+    if (!response?.credential) return;
+    const profile = decodeJwtCredential(response.credential);
+    const user = {
+        ...profile,
+        credential: response.credential,
+        loginTime: new Date().toISOString()
+    };
+    currentUser = user;
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    unlockApp(user);
+}
+
+function decodeJwtCredential(token) {
+    try {
+        const payload = token.split('.')[1];
+        const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+        const decoded = atob(base64);
+        const jsonPayload = decodeURIComponent(decoded.split('').map(c =>
+            '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+        ).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (error) {
+        console.error('Unable to decode ID token', error);
+        return {};
+    }
+}
+
+function unlockApp(user, options = {}) {
+    document.body.classList.add('authenticated');
+    document.body.classList.remove('auth-locked');
+    const overlay = document.getElementById('authOverlay');
+    const app = document.getElementById('appContent');
+    if (overlay) {
+        overlay.setAttribute('aria-hidden', 'true');
+    }
+    if (app) {
+        app.removeAttribute('aria-hidden');
+    }
+    updateUserUI(user);
+
+    if (!options.silent && !hasWelcomedUser) {
+        const name = user?.given_name || user?.name || 'Bright Explorer';
+        speak(`Welcome ${name}! Let's make learning fun!`);
+        hasWelcomedUser = true;
+    }
+}
+
+function lockApp() {
+    document.body.classList.add('auth-locked');
+    document.body.classList.remove('authenticated');
+    const overlay = document.getElementById('authOverlay');
+    const app = document.getElementById('appContent');
+    if (overlay) {
+        overlay.setAttribute('aria-hidden', 'false');
+    }
+    if (app) {
+        app.setAttribute('aria-hidden', 'true');
+    }
+    updateUserUI(null);
+}
+
+function updateUserUI(user) {
+    const greeting = document.getElementById('userGreeting');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const profileCard = document.getElementById('userProfileCard');
+    const profileName = document.getElementById('userProfileName');
+    const profileEmail = document.getElementById('userProfileEmail');
+    const profileAvatar = document.getElementById('userProfileAvatar');
+
+    if (user && greeting) {
+        greeting.textContent = `Hi, ${user.given_name || 'friend'}!`;
+    } else if (greeting) {
+        greeting.textContent = '';
+    }
+
+    if (signOutBtn) {
+        signOutBtn.hidden = !user;
+    }
+
+    if (profileCard) {
+        if (user) {
+            profileCard.hidden = false;
+            if (profileName) {
+                profileName.textContent = user.name || user.given_name || 'Bright Explorer';
+            }
+            if (profileEmail) {
+                profileEmail.textContent = user.email || 'Logged in with Google';
+            }
+            if (profileAvatar) {
+                profileAvatar.textContent = getUserInitials(user);
+            }
+        } else {
+            profileCard.hidden = true;
+        }
+    }
+}
+
+function restoreSession() {
+    const cached = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!cached) {
+        lockApp();
+        return;
+    }
+
+    try {
+        const parsed = JSON.parse(cached);
+        if (parsed?.credential) {
+            currentUser = parsed;
+            unlockApp(parsed, { silent: true });
+        } else {
+            throw new Error('Invalid session payload');
+        }
+    } catch (error) {
+        console.warn('Clearing invalid auth cache', error);
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        lockApp();
+    }
+}
+
+function registerSignOut() {
+    const signOutBtn = document.getElementById('signOutBtn');
+    if (!signOutBtn) return;
+
+    signOutBtn.addEventListener('click', () => {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        currentUser = null;
+        lockApp();
+        if (window.google?.accounts?.id) {
+            window.google.accounts.id.disableAutoSelect();
+        }
+        waitForGoogleClient(initializeGoogleAuth);
+    });
+}
+
+function getUserInitials(user) {
+    const source = user?.name || user?.given_name || user?.email || '';
+    if (!source) return '👤';
+    const initials = source
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(word => word[0]?.toUpperCase())
+        .join('');
+    if (initials) return initials;
+    return (user.email?.[0] || '👤').toUpperCase();
+}
 

@@ -7,21 +7,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="accessibility.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body>
-    <a href="#mainContent" class="skip-link" id="skipLink" aria-describedby="keyboardHint">Skip to main content</a>
-    <div id="accessibilityAnnouncement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-    <div id="keyboardHint" class="sr-only">Use Tab to move between controls. Press Space or Enter to activate buttons.</div>
-    <!-- Background Decorations -->
-    <div class="bg-decoration" aria-hidden="true">
-        <div class="cloud cloud1"></div>
-        <div class="cloud cloud2"></div>
-        <div class="shape shape-circle"></div>
-        <div class="shape shape-triangle"></div>
+<body class="auth-locked">
+    <div id="authOverlay" class="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+        <div class="auth-card">
+            <div class="auth-logo">✨</div>
+            <h1 id="authTitle">Welcome to BrightWords</h1>
+            <p>Sign in with Google to unlock your personalized learning journey.</p>
+            <div id="googleSignInButton" class="google-btn-placeholder" aria-live="polite"></div>
+            <p class="auth-hint">Need a different account? Use the account switcher in the Google dialog.</p>
+        </div>
     </div>
 
-    <!-- Main Container -->
-    <div class="main-container">
+    <div id="appContent" aria-hidden="true">
+        <a href="#mainContent" class="skip-link" id="skipLink" aria-describedby="keyboardHint">Skip to main content</a>
+        <div id="accessibilityAnnouncement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+        <div id="keyboardHint" class="sr-only">Use Tab to move between controls. Press Space or Enter to activate buttons.</div>
+        <!-- Background Decorations -->
+        <div class="bg-decoration" aria-hidden="true">
+            <div class="cloud cloud1"></div>
+            <div class="cloud cloud2"></div>
+            <div class="shape shape-circle"></div>
+            <div class="shape shape-triangle"></div>
+        </div>
+
+        <!-- Main Container -->
+        <div class="main-container">
         <!-- Navigation Header -->
         <header class="site-header" role="banner">
             <nav class="nav-header" role="navigation" aria-label="Primary navigation">
@@ -59,6 +71,12 @@
                          onkeypress="if(event.key==='Enter' || event.key===' '){toggleSettings(); event.preventDefault();}">
                         👤
                     </div>
+                        <div class="user-auth">
+                            <span id="userGreeting" class="user-greeting" aria-live="polite"></span>
+                            <button type="button" id="signOutBtn" class="signout-btn" hidden>
+                                Sign out
+                            </button>
+                        </div>
                 </div>
             </nav>
         </header>
@@ -447,6 +465,13 @@
             <h3 class="settings-title">⚙️ Settings</h3>
             <button class="close-btn" onclick="toggleSettings()" aria-label="Close settings panel">✖</button>
         </div>
+        <div class="user-profile-card" id="userProfileCard" aria-live="polite" hidden>
+            <div class="user-profile-avatar" id="userProfileAvatar" aria-hidden="true">👤</div>
+            <div class="user-profile-info">
+                <p class="user-profile-name" id="userProfileName">Guest Explorer</p>
+                <p class="user-profile-email" id="userProfileEmail">Sign in to personalize BrightWords.</p>
+            </div>
+        </div>
         
         <div class="setting-item">
             <div class="setting-label">
@@ -506,12 +531,13 @@
         <button class="btn-primary" onclick="closeAchievement()" aria-label="Close achievement popup">Continue</button>
     </div>
 
-    <footer class="site-footer" role="contentinfo" aria-label="Site footer">
-        <p>BrightWords • Inclusive learning for every child.</p>
-    </footer>
+        <footer class="site-footer" role="contentinfo" aria-label="Site footer">
+            <p>BrightWords • Inclusive learning for every child.</p>
+        </footer>
 
-    <script src="main.js"></script>
-    <script src="accessibility.js"></script>
+        <script src="main.js"></script>
+        <script src="accessibility.js"></script>
+    </div>
 </body>
 </html>
 

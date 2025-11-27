@@ -31,6 +31,154 @@ body {
     overflow-x: hidden;
 }
 
+body.auth-locked {
+    overflow: hidden;
+    background: #0f172a;
+}
+
+#appContent {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+body.authenticated #appContent {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at top, rgba(80,29,149,0.45), #0f172a 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 9999;
+    color: #fff;
+    transition: opacity 0.3s ease;
+}
+
+body.authenticated .auth-overlay {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.auth-card {
+    background: rgba(15, 23, 42, 0.92);
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 30px 60px rgba(15,23,42,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.auth-logo {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.auth-card h1 {
+    font-family: 'Fredoka', cursive;
+    font-size: 32px;
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+.auth-card p {
+    color: #E2E8F0;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.google-btn-placeholder {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-hint {
+    font-size: 14px;
+    margin-top: 16px;
+    color: #94A3B8;
+}
+
+.user-auth {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    margin-left: 12px;
+}
+
+.user-greeting {
+    font-weight: 600;
+    font-size: 14px;
+    color: #111827;
+}
+
+.signout-btn {
+    border: none;
+    background: #ef4444;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.signout-btn:hover {
+    background: #dc2626;
+}
+
+.user-profile-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid rgba(15,23,42,0.08);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 20px;
+}
+
+.user-profile-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #8B5CF6, #EC4899);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #fff;
+    font-weight: 700;
+}
+
+.user-profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.user-profile-name {
+    font-weight: 700;
+    font-size: 18px;
+    color: #111827;
+}
+
+.user-profile-email {
+    font-size: 14px;
+    color: #6B7280;
+    word-break: break-word;
+}
+
 /* Animated Background Elements */
 .bg-decoration {
     position: fixed;
