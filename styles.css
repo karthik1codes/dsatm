@@ -841,6 +841,68 @@ body.authenticated .auth-overlay {
     box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
 }
 
+/* Blind/Low Vision Activity Buttons */
+.blind-activities-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.blind-activity-btn {
+    background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+    color: white;
+    border: none;
+    padding: 24px 20px;
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    min-height: 140px;
+    justify-content: center;
+}
+
+.blind-activity-btn:hover,
+.blind-activity-btn:focus {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    outline: 3px solid rgba(255,255,255,0.5);
+    outline-offset: 2px;
+}
+
+.blind-activity-btn:active {
+    transform: translateY(-2px);
+}
+
+.blind-activity-btn span:first-child {
+    font-size: 32px;
+    display: block;
+}
+
+.blind-activity-btn span:last-child {
+    font-size: 14px;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+@media (max-width: 768px) {
+    .blind-activities-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .blind-activity-btn {
+        min-height: 120px;
+        padding: 20px 16px;
+    }
+}
+
 .tip-btn:hover,
 .action-btn:hover {
     transform: translateY(-2px);
@@ -1704,8 +1766,8 @@ body.authenticated .auth-overlay {
 }
 
 .letter-tile {
-    background: white;
     border: 3px solid var(--primary-purple);
+    background: white;
     border-radius: 15px;
     padding: 20px;
     font-size: 28px;
@@ -1714,13 +1776,21 @@ body.authenticated .auth-overlay {
     cursor: pointer;
     transition: all 0.3s;
     text-align: center;
+    min-width: 60px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.letter-tile:hover {
+.letter-tile:hover,
+.letter-tile:focus {
     background: var(--primary-purple);
     color: white;
     transform: scale(1.1);
     box-shadow: var(--shadow-lg);
+    outline: 3px solid rgba(139, 92, 246, 0.5);
+    outline-offset: 2px;
 }
 
 .letter-tile.selected {

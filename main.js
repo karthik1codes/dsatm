@@ -285,22 +285,43 @@ function loadPhonicsGame() {
         </div>
     `;
 
-    // Create letter tiles
+    // Create letter tiles with keyboard navigation
     const letterGrid = document.getElementById('letterGrid');
-    currentWord.split('').forEach((letter) => {
-        const tile = document.createElement('div');
+    currentWord.split('').forEach((letter, index) => {
+        const tile = document.createElement('button');
         tile.className = 'letter-tile';
         tile.textContent = letter;
+        tile.setAttribute('role', 'button');
+        tile.setAttribute('aria-label', `Letter ${letter}, position ${index + 1} of ${currentWord.length}`);
+        tile.setAttribute('tabindex', '0');
         tile.onclick = () => {
-            speak(letter, 0.6);
+            speak(`Letter ${letter}`, 0.6);
             tile.classList.add('selected');
             setTimeout(() => tile.classList.remove('selected'), 500);
             playSound('click');
         };
+        // Keyboard navigation
+        tile.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                speak(`Letter ${letter}`, 0.6);
+                tile.classList.add('selected');
+                setTimeout(() => tile.classList.remove('selected'), 500);
+                playSound('click');
+            }
+        });
         letterGrid.appendChild(tile);
     });
 
-    setTimeout(() => speak(`Let's learn the word: ${currentWord}`), 500);
+    // Enhanced audio feedback for blind/low vision users
+    const isBlindMode = currentCategory === 'blind';
+    if (isBlindMode) {
+        setTimeout(() => {
+            speak(`Phonics Fun activity. The word is ${currentWord}. Click or press Enter on each letter to hear its sound. Use Tab to navigate between letters.`, 0.7);
+        }, 800);
+    } else {
+        setTimeout(() => speak(`Let's learn the word: ${currentWord}`), 500);
+    }
 }
 
 function speakFullWord() {
@@ -339,11 +360,12 @@ function loadSpellingGame() {
                 ${currentWord.split('').map(() => '_').join(' ')}
             </div>
             <input type="text" id="spellingInput"
-                   style="font-size: 32px; padding: 15px; text-align: center;
-                          width: 80%; max-width: 400px; margin: 20px auto;
-                          display: block; border: 3px solid #8B5CF6;
-                          border-radius: 15px; text-transform: uppercase;"
-                   placeholder="Type here...">
+                    class="spelling-input"
+                    style="font-size: 32px; padding: 15px; text-align: center;
+                           width: 80%; max-width: 400px; margin: 20px auto;
+                           display: block; border: 3px solid var(--primary-purple);
+                           border-radius: 15px; text-transform: uppercase;"
+                    placeholder="Type here...">
             <div class="control-panel">
                 <button class="control-btn" onclick="checkSpelling()">
                     ✓ Check Answer
@@ -404,7 +426,7 @@ function loadWritingGame() {
                 Practice writing letters and words!
             </p>
             <canvas id="writingCanvas" width="600" height="300"
-                    style="border: 3px dashed #8B5CF6; border-radius: 15px;
+                    style="border: 3px dashed var(--primary-purple); border-radius: 15px;
                            background: white; cursor: crosshair;">
             </canvas>
             <div class="control-panel">
@@ -426,22 +448,30 @@ function loadReadingGame() {
     gameContainer.innerHTML = `
         <div class="reading-game-wrapper">
             <h3 class="story-title">The Magic Garden Adventure</h3>
-            <div class="story-container">
+            <div class="story-container" role="article" aria-label="Story: The Magic Garden Adventure">
                 <p id="readingText" class="story-text">
                     Once upon a time, in a small village, there lived a curious girl named Maya. Every morning, Maya would visit the magical garden behind her house. The garden was filled with colorful flowers that seemed to dance in the gentle breeze. One sunny day, Maya discovered a tiny door hidden beneath a large oak tree. Her heart filled with excitement as she opened the door and stepped into a world of wonder. Inside, she met friendly animals who could talk and trees that sang beautiful melodies. Maya learned that kindness and curiosity could unlock the most amazing adventures. She spent the day exploring, making new friends, and discovering that magic exists when you believe in yourself. As the sun set, Maya returned home with a heart full of joy and memories that would last forever.
                 </p>
             </div>
             <div class="control-panel">
-                <button class="control-btn" onclick="readAloud()">
+                <button class="control-btn" onclick="readAloud()" aria-label="Read the entire story aloud">
                     🔊 Read Aloud
                 </button>
-                <button class="control-btn" onclick="highlightWords()">
+                <button class="control-btn" onclick="highlightWords()" aria-label="Highlight words one by one with audio">
                     🖍️ Highlight Words
                 </button>
             </div>
         </div>
     `;
     makeWordsClickable();
+    
+    // Enhanced audio feedback for blind/low vision users
+    const isBlindMode = currentCategory === 'blind';
+    if (isBlindMode) {
+        setTimeout(() => {
+            speak('Story Explorer activity. This is the story "The Magic Garden Adventure". Press the Read Aloud button to hear the entire story, or use the Highlight Words button to hear each word individually. You can also click on any word to hear it spoken.', 0.7);
+        }, 800);
+    }
 }
 
 function loadMemoryGame() {
@@ -472,7 +502,7 @@ function loadStoriesGame() {
             <h3 style="font-size: 28px; margin-bottom: 20px;">Create Your Story!</h3>
             <div style="margin-bottom: 20px;">
                 <label style="font-size: 18px;">Choose a theme:</label>
-                <select id="storyTheme" style="margin-left: 10px; padding: 10px; border-radius: 10px; border: 2px solid #8B5CF6;">
+                <select id="storyTheme" style="margin-left: 10px; padding: 10px; border-radius: 10px; border: 2px solid var(--primary-purple);">
                     <option value="adventure">🏔️ Adventure</option>
                     <option value="animals">🐾 Animals</option>
                     <option value="magic">✨ Magic</option>
@@ -484,7 +514,7 @@ function loadStoriesGame() {
             </div>
             <textarea id="storyInput" placeholder="Continue the story..."
                       style="width: 100%; height: 150px; font-size: 18px; padding: 15px;
-                             border: 2px solid #8B5CF6; border-radius: 15px;">
+                             border: 2px solid var(--primary-purple); border-radius: 15px;">
             </textarea>
             <div class="control-panel">
                 <button class="control-btn" onclick="generateStoryIdea()">
@@ -521,7 +551,9 @@ function initializeCanvas() {
         const rect = canvas.getBoundingClientRect();
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
-        ctx.strokeStyle = '#8B5CF6';
+        // Use CSS variable for stroke color
+        const root = getComputedStyle(document.documentElement);
+        ctx.strokeStyle = root.getPropertyValue('--primary-purple').trim() || '#8B5CF6';
         ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
         ctx.stroke();
     });
@@ -567,7 +599,13 @@ function speakWord(word) {
 function readAloud() {
     const text = document.getElementById('readingText');
     if (text) {
-        speak(text.textContent, 0.8);
+        const isBlindMode = currentCategory === 'blind';
+        if (isBlindMode) {
+            speak('Reading the story: The Magic Garden Adventure. ' + text.textContent, 0.75);
+        } else {
+            speak(text.textContent, 0.8);
+        }
+        playSound('click');
     }
 }
 
@@ -773,6 +811,62 @@ function toggleSettings() {
     const panel = document.getElementById('settingsPanel');
     panel.classList.toggle('open');
     playSound('click');
+}
+
+// Color Theme Functions
+function changeColorTheme(theme) {
+    const root = document.documentElement;
+    const swatches = document.querySelectorAll('.theme-swatch');
+    
+    // Remove active state from all swatches
+    swatches.forEach(swatch => {
+        swatch.style.border = '3px solid transparent';
+        swatch.style.transform = 'scale(1)';
+    });
+    
+    // Apply theme based on selection
+    switch(theme) {
+        case 'purple':
+            root.style.setProperty('--primary-purple', '#8B5CF6');
+            root.style.setProperty('--primary-pink', '#EC4899');
+            document.getElementById('theme-purple').style.border = '3px solid #1F2937';
+            document.getElementById('theme-purple').style.transform = 'scale(1.1)';
+            break;
+        case 'blue':
+            root.style.setProperty('--primary-purple', '#3B82F6');
+            root.style.setProperty('--primary-pink', '#10B981');
+            document.getElementById('theme-blue').style.border = '3px solid #1F2937';
+            document.getElementById('theme-blue').style.transform = 'scale(1.1)';
+            break;
+        case 'orange':
+            root.style.setProperty('--primary-purple', '#F59E0B');
+            root.style.setProperty('--primary-pink', '#FB923C');
+            document.getElementById('theme-orange').style.border = '3px solid #1F2937';
+            document.getElementById('theme-orange').style.transform = 'scale(1.1)';
+            break;
+    }
+    
+    // Save theme preference (user-specific)
+    const storageKey = getUserStorageKey('brightwords_color_theme');
+    localStorage.setItem(storageKey, theme);
+    
+    speak(`Color theme changed to ${theme}`);
+    playSound('click');
+}
+
+function loadColorTheme() {
+    let themeToLoad = 'purple'; // Default theme
+    
+    if (currentUser && currentUser.email) {
+        // Load user-specific theme
+        const storageKey = getUserStorageKey('brightwords_color_theme');
+        themeToLoad = localStorage.getItem(storageKey) || 'purple';
+    } else {
+        // No user logged in, use default or check for any saved theme
+        themeToLoad = localStorage.getItem('brightwords_color_theme') || 'purple';
+    }
+    
+    changeColorTheme(themeToLoad);
 }
 
 function startLearning() {
@@ -1371,6 +1465,11 @@ function watchDemo() {
 }
 
 function showVideoSelectionDialog(dyslexiaLink, dysgraphiaLink) {
+    // Get current theme colors
+    const root = getComputedStyle(document.documentElement);
+    const primaryColor = root.getPropertyValue('--primary-purple').trim() || '#8B5CF6';
+    const secondaryColor = root.getPropertyValue('--primary-pink').trim() || '#EC4899';
+    
     // Create modal overlay
     const overlay = document.createElement('div');
     overlay.className = 'video-selection-overlay';
@@ -1407,7 +1506,7 @@ function showVideoSelectionDialog(dyslexiaLink, dysgraphiaLink) {
         </p>
         <div style="display: flex; flex-direction: column; gap: 16px;">
             <button class="video-option-btn" data-link="${dyslexiaLink}" style="
-                background: linear-gradient(135deg, #8B5CF6, #EC4899);
+                background: linear-gradient(135deg, ${primaryColor}, ${secondaryColor});
                 color: white;
                 border: none;
                 padding: 18px 24px;
@@ -1421,7 +1520,7 @@ function showVideoSelectionDialog(dyslexiaLink, dysgraphiaLink) {
                 📚 Dyslexia Demo Video
             </button>
             <button class="video-option-btn" data-link="${dysgraphiaLink}" style="
-                background: linear-gradient(135deg, #3B82F6, #10B981);
+                background: linear-gradient(135deg, ${primaryColor}, ${secondaryColor});
                 color: white;
                 border: none;
                 padding: 18px 24px;
@@ -1526,12 +1625,19 @@ function showVideoSelectionDialog(dyslexiaLink, dysgraphiaLink) {
 
 // Confetti Effect
 function createConfetti() {
+    // Get current theme colors
+    const root = getComputedStyle(document.documentElement);
+    const primaryColor = root.getPropertyValue('--primary-purple').trim() || '#8B5CF6';
+    const secondaryColor = root.getPropertyValue('--primary-pink').trim() || '#EC4899';
+    
     for (let i = 0; i < 30; i++) {
         setTimeout(() => {
             const confetti = document.createElement('div');
             confetti.className = 'confetti';
             confetti.style.left = Math.random() * 100 + '%';
-            confetti.style.background = ['#8B5CF6', '#EC4899', '#3B82F6', '#10B981', '#F59E0B'][Math.floor(Math.random() * 5)];
+            // Use theme colors plus some additional colors for variety
+            const colors = [primaryColor, secondaryColor, '#3B82F6', '#10B981', '#F59E0B'];
+            confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
             confetti.style.animationDelay = Math.random() * 0.5 + 's';
             document.body.appendChild(confetti);
 
@@ -1693,10 +1799,69 @@ function renderSupportFeatures(category) {
             </div>
         `,
         blind: `
-            <div class="support-widget" aria-label="Voice assistant helper">
-                <h3>Voice Assistant</h3>
-                <p>Hear friendly guidance that summarizes the current screen and suggests the next step.</p>
-                <button class="voice-btn" id="voiceGuideBtn">🔊 Play guidance</button>
+            <div class="support-widget" aria-label="Blind and low vision activities">
+                <h3>🎯 Choose Your Activity</h3>
+                <p>Select an activity designed for blind and low vision learners with enhanced audio support and keyboard navigation.</p>
+                <div class="blind-activities-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;">
+                    <button class="blind-activity-btn" id="blindPhonicsBtn" onclick="openBlindActivity('phonics')" style="
+                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+                        color: white;
+                        border: none;
+                        padding: 24px 20px;
+                        border-radius: 16px;
+                        font-size: 18px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 8px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    " onmouseenter="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';">
+                        <span style="font-size: 32px;">🔤</span>
+                        <span>Phonics Fun</span>
+                        <span style="font-size: 14px; opacity: 0.9; font-weight: 400;">Master letter sounds with audio feedback</span>
+                    </button>
+                    <button class="blind-activity-btn" id="blindReadingBtn" onclick="openBlindActivity('reading')" style="
+                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+                        color: white;
+                        border: none;
+                        padding: 24px 20px;
+                        border-radius: 16px;
+                        font-size: 18px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 8px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    " onmouseenter="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';">
+                        <span style="font-size: 32px;">📖</span>
+                        <span>Story Explorer</span>
+                        <span style="font-size: 14px; opacity: 0.9; font-weight: 400;">Discover stories with voice narration</span>
+                    </button>
+                </div>
+                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2);">
+                    <button class="voice-btn" id="voiceGuideBtn" style="
+                        background: rgba(255,255,255,0.2);
+                        color: white;
+                        border: 2px solid rgba(255,255,255,0.3);
+                        padding: 12px 24px;
+                        border-radius: 12px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        width: 100%;
+                        transition: all 0.2s;
+                    " onmouseenter="this.style.background='rgba(255,255,255,0.3)';" onmouseleave="this.style.background='rgba(255,255,255,0.2)';">
+                        🔊 Get Voice Guidance
+                    </button>
+                </div>
             </div>
         `,
         deaf: `
@@ -1734,9 +1899,14 @@ function renderSupportFeatures(category) {
         const voiceBtn = document.getElementById('voiceGuideBtn');
         if (voiceBtn) {
             voiceBtn.addEventListener('click', () => {
-                startVoiceGuide('Here is a quick tour. Use the navigation to jump between learn, progress, or games. The big purple button starts your next mission.');
+                startVoiceGuide('Here is a quick tour. Use the navigation to jump between learn, progress, or games. You can choose between Phonics Fun to learn letter sounds, or Story Explorer to enjoy narrated stories. Both activities are optimized for audio learning.');
             });
         }
+        
+        // Announce available activities
+        setTimeout(() => {
+            speak('Blind and low vision mode activated. You can choose Phonics Fun to learn letter sounds with audio feedback, or Story Explorer to enjoy stories with full narration. Both activities support keyboard navigation.');
+        }, 500);
     }
 
     if (category === 'deaf') {
@@ -1765,6 +1935,23 @@ function renderSupportFeatures(category) {
 function startVoiceGuide(message) {
     speak(message);
     playSound('click');
+}
+
+// Function to open activities from Blind/Low Vision profile
+function openBlindActivity(activityType) {
+    if (activityType === 'phonics') {
+        speak('Opening Phonics Fun. This activity helps you learn letter sounds with enhanced audio feedback and keyboard navigation.');
+        playSound('click');
+        setTimeout(() => {
+            openModule('phonics');
+        }, 1000);
+    } else if (activityType === 'reading') {
+        speak('Opening Story Explorer. You will hear stories with full narration and can navigate using your keyboard.');
+        playSound('click');
+        setTimeout(() => {
+            openModule('reading');
+        }, 1000);
+    }
 }
 
 function initChatSupport() {
@@ -1971,6 +2158,12 @@ window.addEventListener('load', () => {
     initMotionCarousel();
     bootstrapAuth();
     
+    // Load default theme if no user is logged in
+    // (User-specific theme will be loaded in unlockApp if user is logged in)
+    if (!currentUser || !currentUser.email) {
+        loadColorTheme();
+    }
+    
     // Note: Progress data will be loaded after authentication in unlockApp()
     // This ensures we load the correct user's data
 });
@@ -2066,6 +2259,7 @@ function unlockApp(user, options = {}) {
         loadOverallProgress();
         loadStreakData();
         loadDailyProgress();
+        loadColorTheme();
     }
 
     if (!options.silent && !hasWelcomedUser) {
