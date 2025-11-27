@@ -171,6 +171,7 @@ body.accessibility-mode .user-greeting {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 120px;
+    color: #f8fafc;
 }
 
 body.accessibility-mode .signout-btn {
@@ -178,6 +179,13 @@ body.accessibility-mode .signout-btn {
     font-size: 12px;
     white-space: nowrap;
     flex-shrink: 0;
+    color: #ffffff;
+    background: #ef4444;
+}
+
+body.accessibility-mode .signout-btn:hover {
+    background: #dc2626;
+    color: #ffffff;
 }
 body.accessibility-mode .support-card.active,
 body.accessibility-mode .module-card:hover {
