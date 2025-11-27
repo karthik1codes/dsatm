@@ -1,6 +1,6 @@
 // Global Variables
 let currentModule = '';
-let score = 250;
+let score = 0; // Start from 0, will load from storage
 let currentWord = '';
 let settings = {
     tts: true,
@@ -21,6 +21,38 @@ let dailyProgress = {
     time: 0, // in minutes
     date: new Date().toDateString()
 };
+
+// Overall Progress Tracking
+let overallProgress = {
+    totalLessons: 0,
+    totalAchievements: 0,
+    totalTime: 0, // in minutes
+    moduleProgress: {
+        phonics: { completed: 0, total: 0 },
+        spelling: { completed: 0, total: 0 },
+        writing: { completed: 0, total: 0 },
+        reading: { completed: 0, total: 0 },
+        memory: { completed: 0, total: 0 },
+        stories: { completed: 0, total: 0 }
+    }
+};
+
+// Streak Tracking
+let streakData = {
+    currentStreak: 0,
+    lastActivityDate: null,
+    longestStreak: 0
+};
+
+// Helper function to get user-specific storage keys
+function getUserStorageKey(baseKey) {
+    if (!currentUser || !currentUser.email) {
+        return baseKey; // Fallback to base key if no user
+    }
+    // Create a safe key from email (replace special chars)
+    const userKey = currentUser.email.replace(/[^a-zA-Z0-9]/g, '_');
+    return `${baseKey}_${userKey}`;
+}
 
 // Learning Tips
 const learningTips = [
@@ -123,6 +155,10 @@ function playSound(type) {
     oscillator.stop(audioContext.currentTime + 0.3);
 }
 
+// Time tracking
+let moduleStartTime = null;
+let timeTrackingInterval = null;
+
 // Module Opening Function
 function openModule(moduleName) {
     currentModule = moduleName;
@@ -170,6 +206,29 @@ function openModule(moduleName) {
     
     // Update daily progress
     updateDailyProgress('lesson', 1);
+    
+    // Update streak when starting a lesson
+    updateStreak();
+    
+    // Track module activity (increment total attempts)
+    if (overallProgress.moduleProgress[moduleName]) {
+        overallProgress.moduleProgress[moduleName].total += 1;
+    }
+    
+    // Start time tracking
+    moduleStartTime = Date.now();
+    if (timeTrackingInterval) {
+        clearInterval(timeTrackingInterval);
+    }
+    timeTrackingInterval = setInterval(() => {
+        const timeSpent = Math.floor((Date.now() - moduleStartTime) / 60000); // in minutes
+        if (timeSpent > 0) {
+            updateDailyProgress('time', 1);
+            overallProgress.totalTime += 1;
+            saveOverallProgress();
+            updateProgressUI();
+        }
+    }, 60000); // Update every minute
 
     // Smooth scroll
     learningArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -179,6 +238,23 @@ function openModule(moduleName) {
 function closeLearningArea() {
     const learningArea = document.getElementById('learningArea');
     learningArea.classList.remove('active');
+    
+    // Stop time tracking and save time spent
+    if (timeTrackingInterval) {
+        clearInterval(timeTrackingInterval);
+        timeTrackingInterval = null;
+    }
+    if (moduleStartTime) {
+        const timeSpent = Math.floor((Date.now() - moduleStartTime) / 60000); // in minutes
+        if (timeSpent > 0) {
+            updateDailyProgress('time', timeSpent);
+            overallProgress.totalTime += timeSpent;
+            saveOverallProgress();
+            updateProgressUI();
+        }
+        moduleStartTime = null;
+    }
+    
     playSound('click');
 }
 
@@ -236,6 +312,8 @@ function nextPhonicsWord() {
     updateScore(10);
     loadPhonicsGame();
     showFeedback('Great job! Here\'s a new word!');
+    // Track module completion after completing a word
+    trackModuleCompletion('phonics');
 }
 
 // Spelling Game
@@ -306,6 +384,8 @@ function checkSpelling() {
         speak('Excellent! You spelled it correctly!');
         updateScore(20);
         createConfetti();
+        // Track module completion
+        trackModuleCompletion('spelling');
     } else {
         feedback.className = 'feedback-message feedback-error';
         feedback.textContent = `Not quite. The correct spelling is: ${currentWord}`;
@@ -463,6 +543,8 @@ function saveDrawing() {
     showFeedback('Great job! Your drawing has been saved!');
     updateScore(15);
     playSound('success');
+    // Track module completion
+    trackModuleCompletion('writing');
 }
 
 // Reading functions
@@ -493,6 +575,7 @@ function highlightWords() {
     const spans = document.querySelectorAll('#readingText .word-clickable');
     let delay = 0;
     const wordDelay = 600; // Faster highlighting
+    let wordsHighlighted = 0;
 
     spans.forEach((span) => {
         setTimeout(() => {
@@ -501,12 +584,21 @@ function highlightWords() {
             span.style.fontWeight = '600';
             const word = span.getAttribute('data-word') || span.textContent;
             speak(word, 0.7);
+            wordsHighlighted++;
 
             setTimeout(() => {
                 span.style.backgroundColor = 'transparent';
                 span.style.color = '';
                 span.style.fontWeight = '';
             }, 500);
+            
+            // Track completion when all words are highlighted
+            if (wordsHighlighted === spans.length) {
+                setTimeout(() => {
+                    trackModuleCompletion('reading');
+                    updateScore(15);
+                }, 500);
+            }
         }, delay);
 
         delay += wordDelay;
@@ -577,6 +669,8 @@ function checkMemorySequence() {
         playSound('success');
         updateScore(25);
         createConfetti();
+        // Track module completion
+        trackModuleCompletion('memory');
     } else {
         showFeedback(`The correct sequence was: ${memorySequence.join(', ')}`);
         playSound('error');
@@ -618,12 +712,15 @@ function saveStory() {
     showFeedback('📚 Your story has been saved! Great creative writing!');
     updateScore(30);
     playSound('success');
+    // Track module completion
+    trackModuleCompletion('stories');
 }
 
 // Helper Functions
 function updateScore(points) {
     score += points;
-    document.getElementById('totalPoints').textContent = score;
+    saveOverallProgress();
+    updateProgressUI();
     
     // Update daily progress
     updateDailyProgress('points', points);
@@ -631,6 +728,10 @@ function updateScore(points) {
     // Check for achievements
     if (score >= 500 && score - points < 500) {
         showAchievement('Master Learner!', 'You reached 500 points!');
+    } else if (score >= 1000 && score - points < 1000) {
+        showAchievement('Point Master!', 'You reached 1000 points!');
+    } else if (score >= 2500 && score - points < 2500) {
+        showAchievement('Point Champion!', 'You reached 2500 points!');
     }
 }
 
@@ -658,8 +759,9 @@ function showAchievement(title, description) {
     speak(`Achievement unlocked: ${title}`);
 
     // Update achievement count
-    const achievementCount = document.getElementById('achievements');
-    achievementCount.textContent = parseInt(achievementCount.textContent, 10) + 1;
+    overallProgress.totalAchievements += 1;
+    saveOverallProgress();
+    updateProgressUI();
 }
 
 function closeAchievement() {
@@ -726,11 +828,26 @@ function updateDailyProgress(type, value) {
 }
 
 function saveDailyProgress() {
-    localStorage.setItem('brightwords_daily_progress', JSON.stringify(dailyProgress));
+    const storageKey = getUserStorageKey('brightwords_daily_progress');
+    localStorage.setItem(storageKey, JSON.stringify(dailyProgress));
 }
 
 function loadDailyProgress() {
-    const saved = localStorage.getItem('brightwords_daily_progress');
+    if (!currentUser || !currentUser.email) {
+        // No user logged in, reset to defaults
+        const today = new Date().toDateString();
+        dailyProgress = {
+            lessons: 0,
+            points: 0,
+            time: 0,
+            date: today
+        };
+        updateDailyProgressUI();
+        return;
+    }
+    
+    const storageKey = getUserStorageKey('brightwords_daily_progress');
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
         const parsed = JSON.parse(saved);
         const today = new Date().toDateString();
@@ -745,6 +862,15 @@ function loadDailyProgress() {
                 date: today
             };
         }
+    } else {
+        // First time for this user, initialize
+        const today = new Date().toDateString();
+        dailyProgress = {
+            lessons: 0,
+            points: 0,
+            time: 0,
+            date: today
+        };
     }
     updateDailyProgressUI();
 }
@@ -770,6 +896,270 @@ function resetDailyProgress() {
     updateDailyProgressUI();
     speak('Daily progress has been reset!');
     playSound('click');
+}
+
+// Streak Tracking Functions
+function updateStreak() {
+    const today = new Date().toDateString();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toDateString();
+    
+    // If first time or new day
+    if (!streakData.lastActivityDate) {
+        streakData.currentStreak = 1;
+        streakData.lastActivityDate = today;
+    } else if (streakData.lastActivityDate === today) {
+        // Already updated today, no change needed
+        return;
+    } else if (streakData.lastActivityDate === yesterdayStr) {
+        // Consecutive day - increment streak
+        streakData.currentStreak += 1;
+        streakData.lastActivityDate = today;
+    } else {
+        // Streak broken - reset to 1
+        streakData.currentStreak = 1;
+        streakData.lastActivityDate = today;
+    }
+    
+    // Update longest streak if needed
+    if (streakData.currentStreak > streakData.longestStreak) {
+        streakData.longestStreak = streakData.currentStreak;
+    }
+    
+    saveStreakData();
+    updateStreakUI();
+}
+
+function saveStreakData() {
+    const storageKey = getUserStorageKey('brightwords_streak');
+    localStorage.setItem(storageKey, JSON.stringify(streakData));
+}
+
+function loadStreakData() {
+    if (!currentUser || !currentUser.email) {
+        // No user logged in, reset to defaults
+        streakData = { currentStreak: 0, lastActivityDate: null, longestStreak: 0 };
+        updateStreakUI();
+        return;
+    }
+    
+    const storageKey = getUserStorageKey('brightwords_streak');
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+        try {
+            streakData = JSON.parse(saved);
+            // Check if streak should be reset (more than 1 day gap)
+            if (streakData.lastActivityDate) {
+                const today = new Date().toDateString();
+                const lastDate = new Date(streakData.lastActivityDate);
+                const todayDate = new Date(today);
+                const daysDiff = Math.floor((todayDate - lastDate) / (1000 * 60 * 60 * 24));
+                
+                if (daysDiff > 1 && streakData.lastActivityDate !== today) {
+                    // Streak broken
+                    streakData.currentStreak = 0;
+                }
+            }
+        } catch (e) {
+            console.warn('Error loading streak data', e);
+            streakData = { currentStreak: 0, lastActivityDate: null, longestStreak: 0 };
+        }
+    } else {
+        // First time for this user, initialize
+        streakData = { currentStreak: 0, lastActivityDate: null, longestStreak: 0 };
+    }
+    updateStreakUI();
+}
+
+function updateStreakUI() {
+    const streakCountEl = document.getElementById('streakCount');
+    if (streakCountEl) {
+        streakCountEl.textContent = streakData.currentStreak;
+    }
+}
+
+// Overall Progress Functions
+function markModuleCompleted(moduleName) {
+    if (overallProgress.moduleProgress[moduleName]) {
+        overallProgress.moduleProgress[moduleName].completed += 1;
+        overallProgress.totalLessons += 1;
+        saveOverallProgress();
+        updateProgressUI();
+        updateModuleProgressUI();
+    }
+}
+
+function saveOverallProgress() {
+    const progressKey = getUserStorageKey('brightwords_overall_progress');
+    const scoreKey = getUserStorageKey('brightwords_total_score');
+    localStorage.setItem(progressKey, JSON.stringify(overallProgress));
+    localStorage.setItem(scoreKey, score.toString());
+}
+
+function loadOverallProgress() {
+    if (!currentUser || !currentUser.email) {
+        // No user logged in, reset to defaults
+        overallProgress = {
+            totalLessons: 0,
+            totalAchievements: 0,
+            totalTime: 0,
+            moduleProgress: {
+                phonics: { completed: 0, total: 0 },
+                spelling: { completed: 0, total: 0 },
+                writing: { completed: 0, total: 0 },
+                reading: { completed: 0, total: 0 },
+                memory: { completed: 0, total: 0 },
+                stories: { completed: 0, total: 0 }
+            }
+        };
+        score = 0;
+        updateProgressUI();
+        updateModuleProgressUI();
+        return;
+    }
+    
+    const progressKey = getUserStorageKey('brightwords_overall_progress');
+    const scoreKey = getUserStorageKey('brightwords_total_score');
+    const saved = localStorage.getItem(progressKey);
+    const savedScore = localStorage.getItem(scoreKey);
+    
+    if (saved) {
+        try {
+            overallProgress = JSON.parse(saved);
+            // Ensure moduleProgress structure exists
+            if (!overallProgress.moduleProgress) {
+                overallProgress.moduleProgress = {
+                    phonics: { completed: 0, total: 0 },
+                    spelling: { completed: 0, total: 0 },
+                    writing: { completed: 0, total: 0 },
+                    reading: { completed: 0, total: 0 },
+                    memory: { completed: 0, total: 0 },
+                    stories: { completed: 0, total: 0 }
+                };
+            }
+        } catch (e) {
+            console.warn('Error loading overall progress', e);
+            overallProgress = {
+                totalLessons: 0,
+                totalAchievements: 0,
+                totalTime: 0,
+                moduleProgress: {
+                    phonics: { completed: 0, total: 0 },
+                    spelling: { completed: 0, total: 0 },
+                    writing: { completed: 0, total: 0 },
+                    reading: { completed: 0, total: 0 },
+                    memory: { completed: 0, total: 0 },
+                    stories: { completed: 0, total: 0 }
+                }
+            };
+        }
+    } else {
+        // First time for this user, initialize
+        overallProgress = {
+            totalLessons: 0,
+            totalAchievements: 0,
+            totalTime: 0,
+            moduleProgress: {
+                phonics: { completed: 0, total: 0 },
+                spelling: { completed: 0, total: 0 },
+                writing: { completed: 0, total: 0 },
+                reading: { completed: 0, total: 0 },
+                memory: { completed: 0, total: 0 },
+                stories: { completed: 0, total: 0 }
+            }
+        };
+    }
+    
+    if (savedScore) {
+        try {
+            score = parseInt(savedScore, 10) || 0;
+        } catch (e) {
+            console.warn('Error loading score', e);
+            score = 0;
+        }
+    } else {
+        score = 0;
+    }
+    
+    updateProgressUI();
+    updateModuleProgressUI();
+}
+
+function updateProgressUI() {
+    // Update total points
+    const pointsEl = document.getElementById('totalPoints');
+    if (pointsEl) {
+        pointsEl.textContent = score;
+    }
+    
+    // Update lessons complete
+    const lessonsEl = document.getElementById('lessonsComplete');
+    if (lessonsEl) {
+        lessonsEl.textContent = overallProgress.totalLessons;
+    }
+    
+    // Update achievements
+    const achievementsEl = document.getElementById('achievements');
+    if (achievementsEl) {
+        achievementsEl.textContent = overallProgress.totalAchievements;
+    }
+    
+    // Update time today (from daily progress)
+    const timeEl = document.getElementById('timeSpent');
+    if (timeEl) {
+        const hours = Math.floor(dailyProgress.time / 60);
+        const minutes = dailyProgress.time % 60;
+        if (hours > 0) {
+            timeEl.textContent = `${hours}.${Math.floor(minutes / 6)}h`;
+        } else {
+            timeEl.textContent = `${minutes}m`;
+        }
+    }
+}
+
+function updateModuleProgressUI() {
+    const modules = ['phonics', 'spelling', 'writing', 'reading', 'memory', 'stories'];
+    
+    modules.forEach(moduleName => {
+        const progress = overallProgress.moduleProgress[moduleName];
+        if (!progress) return;
+        
+        // Calculate percentage (based on completed vs total attempts)
+        // Each module needs 10 completions to reach 100%
+        const maxCompletions = 10;
+        const percentage = Math.min(100, Math.floor((progress.completed / maxCompletions) * 100));
+        
+        // Find the module card and update its progress
+        const moduleCards = document.querySelectorAll('.module-card');
+        moduleCards.forEach(card => {
+            const onclick = card.getAttribute('onclick');
+            if (onclick && onclick.includes(`'${moduleName}'`)) {
+                const progressBar = card.querySelector('.progress-bar-fill');
+                const progressLabel = card.querySelector('.progress-label span:last-child');
+                
+                if (progressBar) {
+                    progressBar.style.width = `${percentage}%`;
+                }
+                if (progressLabel) {
+                    progressLabel.textContent = `${percentage}%`;
+                }
+            }
+        });
+    });
+}
+
+// Track module completion when activities are successfully completed
+function trackModuleCompletion(moduleName) {
+    markModuleCompleted(moduleName);
+    updateStreak();
+    
+    // Add time spent on activity (estimate 2-3 minutes per completion)
+    const activityTime = 2;
+    updateDailyProgress('time', activityTime);
+    overallProgress.totalTime += activityTime;
+    saveOverallProgress();
+    updateProgressUI();
 }
 
 function openParentsCommunity(event) {
@@ -1580,28 +1970,9 @@ window.addEventListener('load', () => {
     selectSupportCategory('general', true);
     initMotionCarousel();
     bootstrapAuth();
-    loadDailyProgress();
-
-    // Animate stats on load
-    const statValues = document.querySelectorAll('.stat-value');
-    statValues.forEach(stat => {
-        const finalValue = stat.textContent;
-        stat.textContent = '0';
-
-        setTimeout(() => {
-            let current = 0;
-            const increment = parseInt(finalValue, 10) / 20;
-            const timer = setInterval(() => {
-                current += increment;
-                if (current >= parseInt(finalValue, 10)) {
-                    stat.textContent = finalValue;
-                    clearInterval(timer);
-                } else {
-                    stat.textContent = Math.round(current);
-                }
-            }, 50);
-        }, 500);
-    });
+    
+    // Note: Progress data will be loaded after authentication in unlockApp()
+    // This ensures we load the correct user's data
 });
 
 function bootstrapAuth() {
@@ -1689,6 +2060,13 @@ function unlockApp(user, options = {}) {
         app.removeAttribute('aria-hidden');
     }
     updateUserUI(user);
+    
+    // Load user-specific progress data when they log in
+    if (user && user.email) {
+        loadOverallProgress();
+        loadStreakData();
+        loadDailyProgress();
+    }
 
     if (!options.silent && !hasWelcomedUser) {
         const name = user?.given_name || user?.name || 'Bright Explorer';
@@ -1698,6 +2076,13 @@ function unlockApp(user, options = {}) {
 }
 
 function lockApp() {
+    // Save current user's data before logging out
+    if (currentUser && currentUser.email) {
+        saveOverallProgress();
+        saveStreakData();
+        saveDailyProgress();
+    }
+    
     document.body.classList.add('auth-locked');
     document.body.classList.remove('authenticated');
     const overlay = document.getElementById('authOverlay');
@@ -1709,6 +2094,35 @@ function lockApp() {
         app.setAttribute('aria-hidden', 'true');
     }
     updateUserUI(null);
+    
+    // Reset progress data when logged out
+    score = 0;
+    overallProgress = {
+        totalLessons: 0,
+        totalAchievements: 0,
+        totalTime: 0,
+        moduleProgress: {
+            phonics: { completed: 0, total: 0 },
+            spelling: { completed: 0, total: 0 },
+            writing: { completed: 0, total: 0 },
+            reading: { completed: 0, total: 0 },
+            memory: { completed: 0, total: 0 },
+            stories: { completed: 0, total: 0 }
+        }
+    };
+    streakData = { currentStreak: 0, lastActivityDate: null, longestStreak: 0 };
+    dailyProgress = {
+        lessons: 0,
+        points: 0,
+        time: 0,
+        date: new Date().toDateString()
+    };
+    
+    // Clear UI
+    updateProgressUI();
+    updateStreakUI();
+    updateDailyProgressUI();
+    updateModuleProgressUI();
 }
 
 function updateUserUI(user) {
@@ -1759,6 +2173,7 @@ function restoreSession() {
         if (parsed?.credential) {
             currentUser = parsed;
             unlockApp(parsed, { silent: true });
+            // Data loading happens in unlockApp now
         } else {
             throw new Error('Invalid session payload');
         }
