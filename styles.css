@@ -961,6 +961,212 @@ body.authenticated .auth-overlay {
     font-size: 15px;
 }
 
+/* Image Upload Styles */
+.image-upload-area {
+    margin: 16px 0;
+    position: relative;
+}
+
+.upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    border: 3px dashed rgba(139, 92, 246, 0.4);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+}
+
+.upload-label:hover {
+    border-color: var(--primary-purple);
+    background: rgba(237, 233, 254, 0.5);
+    transform: scale(1.02);
+}
+
+.upload-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.upload-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary-purple);
+    margin-bottom: 4px;
+}
+
+.upload-hint {
+    font-size: 12px;
+    color: var(--light-text);
+}
+
+.image-preview {
+    position: relative;
+    margin: 16px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid rgba(139, 92, 246, 0.3);
+}
+
+.image-preview img {
+    width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    display: block;
+    background: #F3F4F6;
+}
+
+.remove-image-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.remove-image-btn:hover {
+    background: rgba(220, 38, 38, 1);
+    transform: scale(1.1);
+}
+
+.image-result {
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(237, 233, 254, 0.3);
+    border-radius: 12px;
+    border: 2px solid rgba(139, 92, 246, 0.2);
+}
+
+.image-result h4 {
+    font-family: 'Fredoka', cursive;
+    font-size: 18px;
+    color: var(--dark-text);
+    margin-bottom: 12px;
+}
+
+.image-result p,
+.image-result div {
+    color: var(--dark-text);
+    line-height: 1.6;
+    font-size: 15px;
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+#analyzeImageBtn {
+    display: none;
+}
+
+/* API Key Section Styles */
+.api-key-section {
+    margin: 16px 0;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 12px;
+    border: 2px solid rgba(139, 92, 246, 0.2);
+}
+
+.api-key-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(243, 244, 246, 0.8);
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.status-icon {
+    font-size: 20px;
+}
+
+.status-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark-text);
+}
+
+.api-key-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.api-key-input {
+    padding: 12px 16px;
+    border: 2px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    background: white;
+    color: var(--dark-text);
+    transition: all 0.3s;
+}
+
+.api-key-input:focus {
+    outline: none;
+    border-color: var(--primary-purple);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.api-key-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary-green), #34D399);
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.api-key-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.api-key-help {
+    margin-top: 12px;
+}
+
+.api-key-instructions {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(237, 233, 254, 0.5);
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-purple);
+}
+
+.api-key-instructions a {
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.api-key-instructions a:hover {
+    text-decoration: underline;
+}
+
 .voice-btn:focus-visible,
 .focus-btn:focus-visible,
 .chat-send:focus-visible {

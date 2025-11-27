@@ -97,7 +97,9 @@ const supportProfiles = {
 const synth = window.speechSynthesis;
 const supportFeaturePanel = document.getElementById('supportFeaturePanel');
 const OPENAI_CHAT_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+const OPENAI_VISION_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_MODEL = 'gpt-4o-mini';
+const OPENAI_VISION_MODEL = 'gpt-4o'; // Requires paid OpenAI plan. Alternative: 'gpt-4o-mini' (cheaper but may have lower quality)
 const OPENAI_STORAGE_KEY = 'brightwords_openai_key';
 const DEFAULT_AI_KEY = '';
 const FALLBACK_REPLIES = [
@@ -992,6 +994,336 @@ function resetDailyProgress() {
     playSound('click');
 }
 
+// Image Upload and Recognition Functions
+let uploadedImageData = null;
+
+// API Key Management Functions
+function toggleApiKeyInput() {
+    const inputGroup = document.getElementById('apiKeyInputGroup');
+    const toggleBtn = document.getElementById('toggleApiKeyBtn');
+    
+    if (inputGroup && toggleBtn) {
+        const isVisible = inputGroup.style.display !== 'none';
+        inputGroup.style.display = isVisible ? 'none' : 'block';
+        toggleBtn.textContent = isVisible ? '🔑 Setup API Key' : '❌ Cancel';
+        
+        if (!isVisible) {
+            setTimeout(() => {
+                const input = document.getElementById('apiKeyInput');
+                if (input) input.focus();
+            }, 100);
+        }
+    }
+    playSound('click');
+}
+
+function saveApiKey() {
+    const input = document.getElementById('apiKeyInput');
+    if (!input) return;
+    
+    const apiKey = input.value.trim();
+    
+    if (!apiKey) {
+        alert('Please enter an API key!');
+        speak('Please enter an API key');
+        return;
+    }
+    
+    if (!apiKey.startsWith('sk-')) {
+        alert('Invalid API key format. OpenAI API keys start with "sk-"');
+        speak('Invalid API key format');
+        return;
+    }
+    
+    localStorage.setItem(OPENAI_STORAGE_KEY, apiKey);
+    updateApiKeyStatus();
+    input.value = '';
+    const inputGroup = document.getElementById('apiKeyInputGroup');
+    const toggleBtn = document.getElementById('toggleApiKeyBtn');
+    if (inputGroup) inputGroup.style.display = 'none';
+    if (toggleBtn) toggleBtn.textContent = '🔑 Setup API Key';
+    
+    speak('API key saved successfully');
+    playSound('success');
+    showFeedback('✅ API key saved! You can now use image recognition.');
+}
+
+function updateApiKeyStatus() {
+    const statusText = document.getElementById('statusText');
+    const statusIcon = document.getElementById('apiKeyStatus')?.querySelector('.status-icon');
+    const apiKey = localStorage.getItem(OPENAI_STORAGE_KEY);
+    
+    if (statusText) {
+        if (apiKey && apiKey.startsWith('sk-')) {
+            const maskedKey = apiKey.substring(0, 7) + '...' + apiKey.substring(apiKey.length - 4);
+            statusText.textContent = `API Key: ${maskedKey} ✓`;
+            statusText.style.color = '#10B981';
+            if (statusIcon) statusIcon.textContent = '✅';
+        } else {
+            statusText.textContent = 'API Key: Not Set';
+            statusText.style.color = '#EF4444';
+            if (statusIcon) statusIcon.textContent = '🔑';
+        }
+    }
+}
+
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        alert('Please upload an image file!');
+        speak('Please upload an image file');
+        return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        alert('Image size should be less than 10MB!');
+        speak('Image size too large');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        uploadedImageData = e.target.result;
+        showImagePreview(uploadedImageData);
+        playSound('click');
+    };
+    reader.readAsDataURL(file);
+}
+
+function showImagePreview(imageData) {
+    const preview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImage');
+    const uploadArea = document.getElementById('imageUploadArea');
+    const analyzeBtn = document.getElementById('analyzeImageBtn');
+    const resultDiv = document.getElementById('imageResult');
+    
+    if (preview && previewImg) {
+        previewImg.src = imageData;
+        preview.style.display = 'block';
+        if (uploadArea) uploadArea.querySelector('label').style.display = 'none';
+        if (analyzeBtn) analyzeBtn.style.display = 'flex';
+        if (resultDiv) resultDiv.style.display = 'none';
+        speak('Image uploaded successfully');
+    }
+}
+
+function removeImage() {
+    uploadedImageData = null;
+    const preview = document.getElementById('imagePreview');
+    const uploadArea = document.getElementById('imageUploadArea');
+    const analyzeBtn = document.getElementById('analyzeImageBtn');
+    const resultDiv = document.getElementById('imageResult');
+    const input = document.getElementById('imageUploadInput');
+    const label = uploadArea?.querySelector('label');
+    
+    if (preview) preview.style.display = 'none';
+    if (label) label.style.display = 'flex';
+    if (analyzeBtn) analyzeBtn.style.display = 'none';
+    if (resultDiv) resultDiv.style.display = 'none';
+    if (input) input.value = '';
+    
+    playSound('click');
+}
+
+async function analyzeImage() {
+    if (!uploadedImageData) {
+        alert('Please upload an image first!');
+        speak('Please upload an image first');
+        return;
+    }
+    
+    const analyzeBtn = document.getElementById('analyzeImageBtn');
+    const resultDiv = document.getElementById('imageResult');
+    const resultText = document.getElementById('imageResultText');
+    
+    if (!analyzeBtn || !resultDiv || !resultText) return;
+    
+    // Show loading state
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = '🔍 Analyzing...';
+    resultDiv.style.display = 'block';
+    resultText.textContent = 'Analyzing image...';
+    resultText.style.color = '#6B7280';
+    
+    playSound('click');
+    speak('Analyzing image');
+    
+    try {
+        const apiKey = localStorage.getItem(OPENAI_STORAGE_KEY) || DEFAULT_AI_KEY;
+        
+        if (!apiKey || !apiKey.startsWith('sk-')) {
+            resultText.innerHTML = `Please add your OpenAI API key first. <br><code style="background: #F3F4F6; padding: 4px 8px; border-radius: 4px; font-size: 12px;">localStorage.setItem('${OPENAI_STORAGE_KEY}','sk-xxx')</code>`;
+            resultText.style.color = '#EF4444';
+            analyzeBtn.disabled = false;
+            analyzeBtn.textContent = '🔍 Analyze Image';
+            return;
+        }
+        
+        const response = await fetch(OPENAI_VISION_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: OPENAI_VISION_MODEL,
+                messages: [
+                    {
+                        role: 'user',
+                        content: [
+                            {
+                                type: 'text',
+                                text: 'What objects do you see in this image? Please list all the main objects you can identify with their names in a clear, educational format suitable for a learning platform. Format your response as a simple list of object names, one per line.'
+                            },
+                            {
+                                type: 'image_url',
+                                image_url: {
+                                    url: uploadedImageData
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens: 300
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData?.error?.message || `HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('API Response:', data); // Debug log
+        
+        const analysis = data?.choices?.[0]?.message?.content;
+        
+        if (!analysis) {
+            console.error('No analysis content in response:', data);
+            throw new Error('No content received from API. Please try again.');
+        }
+        
+        // Display the results - ensure the div is visible
+        resultDiv.style.display = 'block';
+        resultText.innerHTML = analysis.replace(/\n/g, '<br>');
+        resultText.style.color = '#1F2937';
+        resultText.style.display = 'block';
+        
+        // Scroll to results
+        resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+        // Speak the object names (limit length for TTS)
+        const objectNames = analysis.split('\n').filter(line => line.trim()).slice(0, 10).join(', ');
+        const speakText = objectNames.length > 100 ? 'I found several objects in the image' : `I found these objects: ${objectNames}`;
+        speak(speakText);
+        playSound('success');
+        
+    } catch (error) {
+        console.error('Image analysis error:', error);
+        
+        let errorMessage = error.message || 'Unknown error occurred';
+        let helpfulMessage = '';
+        
+        // Provide helpful error messages based on error type
+        if (errorMessage.includes('quota') || errorMessage.includes('billing')) {
+            helpfulMessage = `
+                <div style="background: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px; border-radius: 8px; margin-top: 8px;">
+                    <strong style="color: #DC2626;">⚠️ API Quota Issue</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #991B1B;">
+                        Your OpenAI account has exceeded its quota or billing is not set up. To fix this:
+                    </p>
+                    <ol style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px; color: #991B1B;">
+                        <li>Visit <a href="https://platform.openai.com/account/billing" target="_blank" style="color: #DC2626; font-weight: 600;">OpenAI Billing</a> to add payment method</li>
+                        <li>Check your usage at <a href="https://platform.openai.com/usage" target="_blank" style="color: #DC2626; font-weight: 600;">OpenAI Usage</a></li>
+                        <li>Make sure you have credits available</li>
+                        <li>Try using a different API key if you have one</li>
+                    </ol>
+                </div>
+            `;
+        } else if (errorMessage.includes('401') || errorMessage.includes('Invalid')) {
+            helpfulMessage = `
+                <div style="background: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px; border-radius: 8px; margin-top: 8px;">
+                    <strong style="color: #DC2626;">⚠️ Invalid API Key</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #991B1B;">
+                        Your API key appears to be invalid. Please check that you've entered it correctly.
+                    </p>
+                </div>
+            `;
+        } else if (errorMessage.includes('model')) {
+            helpfulMessage = `
+                <div style="background: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px; border-radius: 8px; margin-top: 8px;">
+                    <strong style="color: #DC2626;">⚠️ Model Access Issue</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #991B1B;">
+                        The vision model (gpt-4o) may not be available for your account. You may need to upgrade your OpenAI plan.
+                    </p>
+                </div>
+            `;
+        } else {
+            helpfulMessage = `
+                <div style="background: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px; border-radius: 8px; margin-top: 8px;">
+                    <strong style="color: #DC2626;">⚠️ Error Details</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #991B1B;">
+                        ${errorMessage}
+                    </p>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #991B1B;">
+                        Please check your API key and try again. If the problem persists, check the browser console for more details.
+                    </p>
+                </div>
+            `;
+        }
+        
+        resultText.innerHTML = `<strong style="color: #DC2626;">Error:</strong> ${errorMessage}${helpfulMessage}`;
+        resultText.style.color = '#EF4444';
+        resultDiv.style.display = 'block';
+        speak('Error analyzing image. Please check your API key and billing.');
+        playSound('error');
+    } finally {
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = '🔍 Analyze Image';
+    }
+}
+
+// Initialize drag and drop for image upload
+function initImageUploadDragDrop() {
+    const uploadArea = document.getElementById('imageUploadArea');
+    if (!uploadArea) return;
+    
+    const label = uploadArea.querySelector('label');
+    if (!label) return;
+    
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        label.style.backgroundColor = 'rgba(139, 92, 246, 0.1)';
+        label.style.borderColor = 'var(--primary-purple)';
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        label.style.backgroundColor = '';
+        label.style.borderColor = '';
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        label.style.backgroundColor = '';
+        label.style.borderColor = '';
+        
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const input = document.getElementById('imageUploadInput');
+            if (input) {
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                input.files = dataTransfer.files;
+                handleImageUpload({ target: input });
+            }
+        } else {
+            alert('Please drop an image file!');
+        }
+    });
+}
+
 // Streak Tracking Functions
 function updateStreak() {
     const today = new Date().toDateString();
@@ -1791,6 +2123,78 @@ function renderSupportFeatures(category) {
                     </button>
                 </div>
             </div>
+            <div class="support-widget">
+                <h3>📸 Object Recognition</h3>
+                <p>Upload an image to learn what objects are in it!</p>
+                
+                <!-- API Key Setup Section -->
+                <div class="api-key-section" id="apiKeySection">
+                    <div class="api-key-status" id="apiKeyStatus">
+                        <span class="status-icon">🔑</span>
+                        <span class="status-text" id="statusText">API Key: Not Set</span>
+                    </div>
+                    <div class="api-key-input-group" id="apiKeyInputGroup" style="display: none;">
+                        <input type="password" id="apiKeyInput" class="api-key-input" placeholder="Enter your OpenAI API key (sk-...)" autocomplete="off">
+                        <button class="api-key-btn" onclick="saveApiKey()">💾 Save Key</button>
+                    </div>
+                    <button class="tip-btn" id="toggleApiKeyBtn" onclick="toggleApiKeyInput()" style="width: 100%; margin-top: 12px;">
+                        🔑 Setup API Key
+                    </button>
+                    <div class="api-key-help">
+                        <details>
+                            <summary style="cursor: pointer; color: var(--primary-purple); font-weight: 600; margin-top: 12px; font-size: 14px;">
+                                📖 How to get your API key? (Click to expand)
+                            </summary>
+                            <div class="api-key-instructions">
+                                <ol style="margin: 12px 0; padding-left: 20px; font-size: 13px; line-height: 1.8; color: var(--dark-text);">
+                                    <li>Visit <a href="https://platform.openai.com/api-keys" target="_blank" style="color: var(--primary-purple);">platform.openai.com/api-keys</a></li>
+                                    <li>Sign in or create an OpenAI account</li>
+                                    <li>Click "Create new secret key"</li>
+                                    <li>Copy the key (it starts with "sk-")</li>
+                                    <li>Paste it in the input above and click "Save Key"</li>
+                                    <li>Your key is stored locally in your browser</li>
+                                </ol>
+                                <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 10px; border-radius: 6px; margin-top: 12px;">
+                                    <p style="font-size: 12px; color: #92400E; margin: 0; font-weight: 600;">
+                                        💳 Important: Billing Required
+                                    </p>
+                                    <p style="font-size: 11px; color: #78350F; margin: 6px 0 0 0;">
+                                        Vision API requires a paid OpenAI account with billing set up. Make sure you have:
+                                    </p>
+                                    <ul style="font-size: 11px; color: #78350F; margin: 6px 0 0 0; padding-left: 18px;">
+                                        <li>Added a payment method at <a href="https://platform.openai.com/account/billing" target="_blank" style="color: #B45309; font-weight: 600;">OpenAI Billing</a></li>
+                                        <li>Credits available in your account</li>
+                                        <li>Access to GPT-4o or GPT-4o-mini models</li>
+                                    </ul>
+                                </div>
+                                <p style="font-size: 12px; color: var(--light-text); margin-top: 8px;">
+                                    ⚠️ Your API key is stored only in your browser and never shared with us.
+                                </p>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+                
+                <div class="image-upload-area" id="imageUploadArea">
+                    <input type="file" id="imageUploadInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                    <label for="imageUploadInput" class="upload-label">
+                        <span class="upload-icon">📷</span>
+                        <span class="upload-text">Click to Upload Image</span>
+                        <span class="upload-hint">or drag and drop</span>
+                    </label>
+                    <div class="image-preview" id="imagePreview" style="display: none;">
+                        <img id="previewImage" src="" alt="Preview">
+                        <button class="remove-image-btn" onclick="removeImage()">✖</button>
+                    </div>
+                </div>
+                <button class="tip-btn" id="analyzeImageBtn" onclick="analyzeImage()" style="display: none; width: 100%; margin-top: 12px;">
+                    🔍 Analyze Image
+                </button>
+                <div class="image-result" id="imageResult" style="display: none;">
+                    <h4>📝 Object Names:</h4>
+                    <div id="imageResultText" style="min-height: 40px; padding: 8px 0;"></div>
+                </div>
+            </div>
         `,
         custom: `
             <div class="support-widget">
@@ -1894,6 +2298,14 @@ function renderSupportFeatures(category) {
         `
     };
     supportFeaturePanel.innerHTML = templates[category] || templates.general;
+
+    if (category === 'general') {
+        // Initialize image upload drag and drop
+        setTimeout(() => {
+            initImageUploadDragDrop();
+            updateApiKeyStatus();
+        }, 100);
+    }
 
     if (category === 'blind') {
         const voiceBtn = document.getElementById('voiceGuideBtn');
