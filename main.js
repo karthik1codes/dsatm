@@ -687,7 +687,7 @@ function showParentsCommunityDialog(whatsappLink) {
             👨‍👩‍👧‍👦 Parents & Community
         </h2>
         <p style="color: #6B7280; text-align: center; margin-bottom: 20px; line-height: 1.6;">
-            Join our WhatsApp community where parents and children with disabilities can connect, share experiences, and support each other!
+            Join our WhatsApp community where parents and differently abled children can connect, share experiences, and support each other!
         </p>
         <div style="background: #F3F4F6; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
             <h3 style="font-size: 18px; color: #1F2937; margin-bottom: 12px; font-weight: 600;">
