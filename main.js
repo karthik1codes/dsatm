@@ -636,11 +636,86 @@ function toggleSettings() {
     playSound('click');
 }
 
+function changeColorTheme(theme) {
+    const root = document.documentElement;
+    const swatches = document.querySelectorAll('.theme-swatch');
+    
+    // Remove active state from all swatches
+    swatches.forEach(swatch => {
+        swatch.style.border = '3px solid transparent';
+        swatch.style.transform = 'scale(1)';
+    });
+    
+    // Apply theme based on selection
+    switch(theme) {
+        case 'purple':
+            root.style.setProperty('--primary-purple', '#8B5CF6');
+            root.style.setProperty('--primary-pink', '#EC4899');
+            root.style.setProperty('--theme-primary', '#8B5CF6');
+            root.style.setProperty('--theme-secondary', '#EC4899');
+            document.getElementById('theme-purple').style.border = '3px solid #1F2937';
+            document.getElementById('theme-purple').style.transform = 'scale(1.1)';
+            break;
+        case 'blue':
+            root.style.setProperty('--primary-purple', '#3B82F6');
+            root.style.setProperty('--primary-pink', '#10B981');
+            root.style.setProperty('--theme-primary', '#3B82F6');
+            root.style.setProperty('--theme-secondary', '#10B981');
+            document.getElementById('theme-blue').style.border = '3px solid #1F2937';
+            document.getElementById('theme-blue').style.transform = 'scale(1.1)';
+            break;
+        case 'orange':
+            root.style.setProperty('--primary-purple', '#F59E0B');
+            root.style.setProperty('--primary-pink', '#FB923C');
+            root.style.setProperty('--theme-primary', '#F59E0B');
+            root.style.setProperty('--theme-secondary', '#FB923C');
+            document.getElementById('theme-orange').style.border = '3px solid #1F2937';
+            document.getElementById('theme-orange').style.transform = 'scale(1.1)';
+            break;
+    }
+    
+    // Save theme preference
+    localStorage.setItem('brightwords_color_theme', theme);
+    
+    speak(`Color theme changed to ${theme}`);
+    playSound('click');
+}
+
+function loadColorTheme() {
+    const savedTheme = localStorage.getItem('brightwords_color_theme') || 'purple';
+    changeColorTheme(savedTheme);
+}
+
 function startLearning() {
     // Scroll to modules section
     document.querySelector('.modules-section').scrollIntoView({ behavior: 'smooth' });
     speak('Choose a module to start learning!');
     playSound('click');
+}
+
+function scrollToGames(event) {
+    event.preventDefault();
+    
+    // List of available games (currently only Memory Master)
+    // Add more games here as they become available
+    const availableGames = ['memory'];
+    
+    if (availableGames.length === 1) {
+        // If only one game available, open it directly
+        openModule(availableGames[0]);
+    } else if (availableGames.length > 1) {
+        // If multiple games available, scroll to games section to show all
+        const gamesSection = document.querySelector('.modules-section');
+        if (gamesSection) {
+            gamesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            speak('Browse our learning games and activities!');
+            playSound('click');
+        }
+    } else {
+        // No games available
+        speak('Games coming soon!');
+        playSound('click');
+    }
 }
 
 function openParentsCommunity(event) {
@@ -668,6 +743,8 @@ function showParentsCommunityDialog(whatsappLink, facebookLink) {
         justify-content: center;
         z-index: 10000;
         animation: fadeIn 0.3s ease;
+        padding: 20px;
+        overflow-y: auto;
     `;
     
     // Create modal content
@@ -676,11 +753,16 @@ function showParentsCommunityDialog(whatsappLink, facebookLink) {
     modal.style.cssText = `
         background: white;
         border-radius: 24px;
-        padding: 40px;
+        padding: 30px 40px;
         max-width: 500px;
         width: 90%;
+        max-height: 85vh;
+        overflow-y: auto;
         box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         animation: slideUp 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        margin: auto;
     `;
     
     modal.innerHTML = `
@@ -753,6 +835,26 @@ function showParentsCommunityDialog(whatsappLink, facebookLink) {
     
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+    
+    // Add custom scrollbar styling for the modal
+    const scrollbarStyle = document.createElement('style');
+    scrollbarStyle.textContent = `
+        .community-modal::-webkit-scrollbar {
+            width: 8px;
+        }
+        .community-modal::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .community-modal::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .community-modal::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    `;
+    document.head.appendChild(scrollbarStyle);
     
     // Join button functionality for both WhatsApp and Facebook
     const joinButtons = modal.querySelectorAll('.join-community-btn');
@@ -1391,6 +1493,7 @@ window.addEventListener('load', () => {
     selectSupportCategory('general', true);
     initMotionCarousel();
     bootstrapAuth();
+    loadColorTheme();
 
     // Animate stats on load
     const statValues = document.querySelectorAll('.stat-value');
