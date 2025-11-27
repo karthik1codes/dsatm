@@ -872,10 +872,18 @@ function loadColorTheme() {
 }
 
 function startLearning() {
-    // Scroll to modules section
-    document.querySelector('.modules-section').scrollIntoView({ behavior: 'smooth' });
-    speak('Choose a module to start learning!');
-    playSound('click');
+    // Scroll to support needs section first
+    const supportSection = document.getElementById('support');
+    if (supportSection) {
+        supportSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        speak('Choose your support needs to get started. Select a profile that matches your learning style, then choose an activity.');
+        playSound('click');
+    } else {
+        // Fallback to modules if support section not found
+        document.querySelector('.modules-section')?.scrollIntoView({ behavior: 'smooth' });
+        speak('Choose a module to start learning!');
+        playSound('click');
+    }
 }
 
 // Learning Tips Function
@@ -2110,15 +2118,95 @@ function renderSupportFeatures(category) {
                 <button class="tip-btn" onclick="resetDailyProgress()">🔄 Reset Daily Stats</button>
             </div>
             <div class="support-widget">
-                <h3>🎯 Quick Actions</h3>
-                <div class="quick-actions">
-                    <button class="action-btn" onclick="startLearning()">
-                        🚀 Start Learning
+                <h3>🎯 Choose Your Activity</h3>
+                <p style="margin-bottom: 16px; color: #4b5563;">Select an activity to start learning!</p>
+                <div class="activity-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
+                    <button class="activity-option-btn" onclick="openModule('phonics')" style="
+                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+                        color: white;
+                        border: none;
+                        padding: 16px 12px;
+                        border-radius: 12px;
+                        font-size: 15px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 6px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
+                        <span style="font-size: 24px;">🔤</span>
+                        <span>Phonics Fun</span>
                     </button>
-                    <button class="action-btn" onclick="document.getElementById('progress').scrollIntoView({behavior: 'smooth'})">
-                        📈 View Progress
+                    <button class="activity-option-btn" onclick="openModule('spelling')" style="
+                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+                        color: white;
+                        border: none;
+                        padding: 16px 12px;
+                        border-radius: 12px;
+                        font-size: 15px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 6px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
+                        <span style="font-size: 24px;">✏️</span>
+                        <span>Spelling</span>
                     </button>
-                    <button class="action-btn" onclick="toggleSettings()">
+                    <button class="activity-option-btn" onclick="openModule('reading')" style="
+                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+                        color: white;
+                        border: none;
+                        padding: 16px 12px;
+                        border-radius: 12px;
+                        font-size: 15px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 6px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
+                        <span style="font-size: 24px;">📖</span>
+                        <span>Story Explorer</span>
+                    </button>
+                    <button class="activity-option-btn" onclick="openModule('memory')" style="
+                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+                        color: white;
+                        border: none;
+                        padding: 16px 12px;
+                        border-radius: 12px;
+                        font-size: 15px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 6px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
+                        <span style="font-size: 24px;">🧠</span>
+                        <span>Memory Master</span>
+                    </button>
+                </div>
+                <div class="quick-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="action-btn" onclick="document.getElementById('progress').scrollIntoView({behavior: 'smooth'})" style="flex: 1; min-width: 120px;">
+                        📈 Progress
+                    </button>
+                    <button class="action-btn" onclick="toggleSettings()" style="flex: 1; min-width: 120px;">
                         ⚙️ Settings
                     </button>
                 </div>
@@ -2269,6 +2357,54 @@ function renderSupportFeatures(category) {
             </div>
         `,
         deaf: `
+            <div class="support-widget" aria-label="Deaf and hard of hearing activities">
+                <h3>🎯 Choose Your Activity</h3>
+                <p>Select an activity optimized for visual learning with enhanced visual cues and captions.</p>
+                <div class="activity-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0;">
+                    <button class="activity-option-btn" onclick="openModule('reading')" style="
+                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+                        color: white;
+                        border: none;
+                        padding: 18px 14px;
+                        border-radius: 12px;
+                        font-size: 15px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 6px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
+                        <span style="font-size: 28px;">📖</span>
+                        <span>Story Explorer</span>
+                        <span style="font-size: 12px; opacity: 0.9; font-weight: 400;">Visual stories with word highlighting</span>
+                    </button>
+                    <button class="activity-option-btn" onclick="openModule('spelling')" style="
+                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+                        color: white;
+                        border: none;
+                        padding: 18px 14px;
+                        border-radius: 12px;
+                        font-size: 15px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 6px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
+                        <span style="font-size: 28px;">✏️</span>
+                        <span>Spelling Wizard</span>
+                        <span style="font-size: 12px; opacity: 0.9; font-weight: 400;">Visual spelling with hints</span>
+                    </button>
+                </div>
+            </div>
             <div class="support-widget" aria-label="Visual helper chat">
                 <h3>ChatGPT Visual Coach</h3>
                 <p class="chat-intro">Type a question and get instant text replies tuned for deaf and hard-of-hearing learners.</p>
@@ -2284,6 +2420,54 @@ function renderSupportFeatures(category) {
             </div>
         `,
         neurodiverse: `
+            <div class="support-widget" aria-label="Neurodiverse-friendly activities">
+                <h3>🎯 Choose Your Activity</h3>
+                <p>Select a calm, structured activity designed for neurodiverse learners with gentle pacing and extra support.</p>
+                <div class="activity-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0;">
+                    <button class="activity-option-btn" onclick="openModule('phonics')" style="
+                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+                        color: white;
+                        border: none;
+                        padding: 18px 14px;
+                        border-radius: 12px;
+                        font-size: 15px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 6px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
+                        <span style="font-size: 28px;">🔤</span>
+                        <span>Phonics Fun</span>
+                        <span style="font-size: 12px; opacity: 0.9; font-weight: 400;">Gentle letter learning</span>
+                    </button>
+                    <button class="activity-option-btn" onclick="openModule('memory')" style="
+                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+                        color: white;
+                        border: none;
+                        padding: 18px 14px;
+                        border-radius: 12px;
+                        font-size: 15px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 6px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
+                        <span style="font-size: 28px;">🧠</span>
+                        <span>Memory Master</span>
+                        <span style="font-size: 12px; opacity: 0.9; font-weight: 400;">Pattern recognition</span>
+                    </button>
+                </div>
+            </div>
             <div class="support-widget" aria-label="Focus routine helper">
                 <h3>Focus Flow</h3>
                 <p>Short bursts with gentle prompts keep things calm and steady.</p>
