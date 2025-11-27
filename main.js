@@ -997,6 +997,19 @@ function resetDailyProgress() {
 // Image Upload and Recognition Functions
 let uploadedImageData = null;
 
+// PDF Upload and Reading Functions - Global Variables
+let uploadedPdfFile = null;
+let pdfTextContent = '';
+let pdfPages = [];
+let currentPdfPage = 0;
+let isReadingPdf = false;
+let pdfSpeechUtterance = null;
+
+// YouTube Transcript Functions - Global Variables
+let youtubeTranscriptText = '';
+let isReadingTranscript = false;
+let transcriptSpeechUtterance = null;
+
 // API Key Management Functions
 function toggleApiKeyInput() {
     const inputGroup = document.getElementById('apiKeyInputGroup');
@@ -1283,6 +1296,761 @@ async function analyzeImage() {
         analyzeBtn.disabled = false;
         analyzeBtn.textContent = '🔍 Analyze Image';
     }
+}
+
+// PDF Upload and Reading Functions
+function handlePdfUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+        alert('Please upload a PDF file!');
+        speak('Please upload a PDF file');
+        playSound('error');
+        return;
+    }
+    
+    if (file.size > 50 * 1024 * 1024) { // 50MB limit
+        alert('PDF size should be less than 50MB!');
+        speak('PDF size too large');
+        playSound('error');
+        return;
+    }
+    
+    uploadedPdfFile = file;
+    showPdfInfo(file);
+    parsePdf(file);
+    playSound('click');
+}
+
+function showPdfInfo(file) {
+    const pdfInfo = document.getElementById('pdfInfo');
+    const pdfFileName = document.getElementById('pdfFileName');
+    const uploadArea = document.getElementById('pdfUploadArea');
+    const pdfControls = document.getElementById('pdfControls');
+    const pdfContent = document.getElementById('pdfContent');
+    
+    if (pdfInfo && pdfFileName) {
+        pdfFileName.textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        pdfInfo.style.display = 'flex';
+        if (uploadArea) uploadArea.querySelector('label').style.display = 'none';
+    }
+    
+    if (pdfControls) pdfControls.style.display = 'block';
+    if (pdfContent) pdfContent.style.display = 'none';
+    
+    speak('PDF uploaded successfully');
+}
+
+async function parsePdf(file) {
+    const pdfTextContainer = document.getElementById('pdfTextContainer');
+    const pdfText = document.getElementById('pdfText');
+    const pdfControls = document.getElementById('pdfControls');
+    const readBtn = document.getElementById('readPdfBtn');
+    
+    if (!pdfTextContainer || !pdfText) return;
+    
+    // Show loading state
+    pdfText.innerHTML = '<div style="text-align: center; padding: 20px; color: #6B7280;">📄 Loading PDF...</div>';
+    pdfTextContainer.style.display = 'block';
+    if (readBtn) readBtn.disabled = true;
+    if (readBtn) readBtn.textContent = '⏳ Processing PDF...';
+    
+    try {
+        // Set up PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const numPages = pdf.numPages;
+        
+        pdfPages = [];
+        pdfTextContent = '';
+        let fullText = '';
+        
+        // Extract text from each page
+        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            
+            pdfPages.push({
+                pageNum: pageNum,
+                text: pageText
+            });
+            
+            fullText += `\n\n--- Page ${pageNum} ---\n\n${pageText}`;
+        }
+        
+        pdfTextContent = fullText.trim();
+        
+        // Display the text
+        const formattedText = pdfTextContent.split('\n').map(line => {
+            if (line.startsWith('--- Page')) {
+                return `<div class="pdf-page-break">${line}</div>`;
+            }
+            return `<div class="pdf-text-line">${line}</div>`;
+        }).join('');
+        
+        pdfText.innerHTML = formattedText;
+        
+        const pdfContent = document.getElementById('pdfContent');
+        if (pdfContent) pdfContent.style.display = 'block';
+        
+        if (readBtn) {
+            readBtn.disabled = false;
+            readBtn.textContent = `🔊 Read PDF (${numPages} pages)`;
+        }
+        
+        speak(`PDF loaded successfully. ${numPages} pages found.`);
+        playSound('success');
+        
+    } catch (error) {
+        console.error('PDF parsing error:', error);
+        pdfText.innerHTML = `<div style="color: #EF4444; padding: 20px; text-align: center;">
+            ❌ Error reading PDF: ${error.message}<br>
+            <small>Please make sure the PDF is not password-protected or corrupted.</small>
+        </div>`;
+        speak('Error reading PDF file');
+        playSound('error');
+        
+        if (readBtn) {
+            readBtn.disabled = true;
+            readBtn.textContent = '🔊 Read PDF';
+        }
+    }
+}
+
+function readPdf() {
+    if (!pdfTextContent || pdfTextContent.trim() === '') {
+        alert('No PDF content to read!');
+        speak('No PDF content available');
+        return;
+    }
+    
+    if (isReadingPdf) {
+        resumePdfReading();
+        return;
+    }
+    
+    isReadingPdf = true;
+    currentPdfPage = 0;
+    
+    const readBtn = document.getElementById('readPdfBtn');
+    const pauseBtn = document.getElementById('pausePdfBtn');
+    const stopBtn = document.getElementById('stopPdfBtn');
+    const progressDiv = document.getElementById('pdfProgress');
+    const progressFill = document.getElementById('pdfProgressFill');
+    const progressText = document.getElementById('pdfProgressText');
+    
+    if (readBtn) readBtn.style.display = 'none';
+    if (pauseBtn) pauseBtn.style.display = 'block';
+    if (stopBtn) stopBtn.style.display = 'block';
+    if (progressDiv) progressDiv.style.display = 'block';
+    
+    // Split text into chunks for better reading
+    const sentences = pdfTextContent.split(/[.!?]+\s+/).filter(s => s.trim().length > 0);
+    let currentSentenceIndex = 0;
+    const totalSentences = sentences.length;
+    
+    function readNextSentence() {
+        if (!isReadingPdf || currentSentenceIndex >= totalSentences) {
+            stopPdfReading();
+            return;
+        }
+        
+        const sentence = sentences[currentSentenceIndex].trim();
+        if (!sentence) {
+            currentSentenceIndex++;
+            readNextSentence();
+            return;
+        }
+        
+        // Update progress
+        const progress = ((currentSentenceIndex + 1) / totalSentences) * 100;
+        if (progressFill) progressFill.style.width = `${progress}%`;
+        
+        // Find which page we're on
+        const pageNum = Math.floor((currentSentenceIndex / totalSentences) * pdfPages.length) + 1;
+        if (progressText) {
+            progressText.textContent = `Reading page ${pageNum} of ${pdfPages.length}... (${currentSentenceIndex + 1}/${totalSentences} sentences)`;
+        }
+        
+        // Create speech utterance
+        pdfSpeechUtterance = new SpeechSynthesisUtterance(sentence);
+        pdfSpeechUtterance.rate = settings.ttsRate || 1.0;
+        pdfSpeechUtterance.pitch = 1.0;
+        pdfSpeechUtterance.volume = 1.0;
+        
+        pdfSpeechUtterance.onend = () => {
+            currentSentenceIndex++;
+            setTimeout(readNextSentence, 300); // Small pause between sentences
+        };
+        
+        pdfSpeechUtterance.onerror = (error) => {
+            console.error('Speech error:', error);
+            currentSentenceIndex++;
+            setTimeout(readNextSentence, 300);
+        };
+        
+        window.speechSynthesis.speak(pdfSpeechUtterance);
+    }
+    
+    readNextSentence();
+    playSound('click');
+}
+
+function pausePdfReading() {
+    if (!isReadingPdf) return;
+    
+    window.speechSynthesis.pause();
+    
+    const pauseBtn = document.getElementById('pausePdfBtn');
+    const resumeBtn = document.getElementById('readPdfBtn');
+    
+    if (pauseBtn) pauseBtn.style.display = 'none';
+    if (resumeBtn) {
+        resumeBtn.style.display = 'block';
+        resumeBtn.textContent = '▶️ Resume Reading';
+    }
+    
+    playSound('click');
+}
+
+function resumePdfReading() {
+    if (!isReadingPdf) return;
+    
+    window.speechSynthesis.resume();
+    
+    const pauseBtn = document.getElementById('pausePdfBtn');
+    const resumeBtn = document.getElementById('readPdfBtn');
+    
+    if (pauseBtn) pauseBtn.style.display = 'block';
+    if (resumeBtn) resumeBtn.style.display = 'none';
+    
+    playSound('click');
+}
+
+function stopPdfReading() {
+    isReadingPdf = false;
+    window.speechSynthesis.cancel();
+    pdfSpeechUtterance = null;
+    
+    const readBtn = document.getElementById('readPdfBtn');
+    const pauseBtn = document.getElementById('pausePdfBtn');
+    const stopBtn = document.getElementById('stopPdfBtn');
+    const progressDiv = document.getElementById('pdfProgress');
+    
+    if (readBtn) {
+        readBtn.style.display = 'block';
+        readBtn.textContent = `🔊 Read PDF (${pdfPages.length} pages)`;
+    }
+    if (pauseBtn) pauseBtn.style.display = 'none';
+    if (stopBtn) stopBtn.style.display = 'none';
+    if (progressDiv) progressDiv.style.display = 'none';
+    
+    const progressFill = document.getElementById('pdfProgressFill');
+    if (progressFill) progressFill.style.width = '0%';
+    
+    speak('Reading stopped');
+    playSound('click');
+}
+
+function removePdf() {
+    stopPdfReading();
+    
+    uploadedPdfFile = null;
+    pdfTextContent = '';
+    pdfPages = [];
+    currentPdfPage = 0;
+    
+    const pdfInfo = document.getElementById('pdfInfo');
+    const uploadArea = document.getElementById('pdfUploadArea');
+    const pdfControls = document.getElementById('pdfControls');
+    const pdfContent = document.getElementById('pdfContent');
+    const pdfInput = document.getElementById('pdfUploadInput');
+    const label = uploadArea?.querySelector('label');
+    
+    if (pdfInfo) pdfInfo.style.display = 'none';
+    if (label) label.style.display = 'flex';
+    if (pdfControls) pdfControls.style.display = 'none';
+    if (pdfContent) pdfContent.style.display = 'none';
+    if (pdfInput) pdfInput.value = '';
+    
+    playSound('click');
+    speak('PDF removed');
+}
+
+function initPdfUploadDragDrop() {
+    const pdfUploadArea = document.getElementById('pdfUploadArea');
+    if (!pdfUploadArea) return;
+    
+    const pdfInput = document.getElementById('pdfUploadInput');
+    
+    pdfUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        pdfUploadArea.classList.add('drag-over');
+    });
+    
+    pdfUploadArea.addEventListener('dragleave', () => {
+        pdfUploadArea.classList.remove('drag-over');
+    });
+    
+    pdfUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        pdfUploadArea.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && (files[0].type === 'application/pdf' || files[0].name.toLowerCase().endsWith('.pdf'))) {
+            if (pdfInput) {
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(files[0]);
+                pdfInput.files = dataTransfer.files;
+                handlePdfUpload({ target: pdfInput });
+            }
+        } else {
+            alert('Please drop a PDF file!');
+            speak('Please drop a PDF file');
+        }
+    });
+}
+
+// YouTube Transcript Functions
+function extractVideoId(url) {
+    if (!url) return null;
+    
+    // Handle various YouTube URL formats
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+        /youtube\.com\/watch\?.*v=([^&\n?#]+)/
+    ];
+    
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+            return match[1];
+        }
+    }
+    
+    return null;
+}
+
+async function fetchYouTubeTranscript() {
+    const urlInput = document.getElementById('youtubeUrlInput');
+    const fetchBtn = document.getElementById('fetchTranscriptBtn');
+    const transcriptContent = document.getElementById('youtubeTranscriptContent');
+    const transcriptText = document.getElementById('transcriptText');
+    const videoInfo = document.getElementById('youtubeVideoInfo');
+    const videoTitle = document.getElementById('youtubeVideoTitle');
+    const transcriptControls = document.getElementById('youtubeTranscriptControls');
+    
+    if (!urlInput || !fetchBtn) return;
+    
+    const url = urlInput.value.trim();
+    if (!url) {
+        alert('Please enter a YouTube URL!');
+        speak('Please enter a YouTube URL');
+        playSound('error');
+        return;
+    }
+    
+    const videoId = extractVideoId(url);
+    if (!videoId) {
+        alert('Invalid YouTube URL! Please make sure the URL is correct.');
+        speak('Invalid YouTube URL');
+        playSound('error');
+        return;
+    }
+    
+    // Show loading state
+    fetchBtn.disabled = true;
+    fetchBtn.textContent = '⏳ Fetching Transcript...';
+    if (transcriptText) transcriptText.innerHTML = '<div style="text-align: center; padding: 20px; color: #6B7280;">Loading transcript...</div>';
+    if (transcriptContent) transcriptContent.style.display = 'block';
+    
+    playSound('click');
+    speak('Fetching YouTube transcript');
+    
+    try {
+        // Try to fetch transcript using a CORS proxy and YouTube's transcript API
+        // Using a free CORS proxy service
+        const transcriptUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en`;
+        
+        // First, try to get video info
+        const videoInfoUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+        
+        let videoTitleText = 'YouTube Video';
+        try {
+            const infoResponse = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(videoInfoUrl)}`);
+            if (infoResponse.ok) {
+                const responseText = await infoResponse.text();
+                if (responseText && responseText.trim()) {
+                    try {
+                        const infoData = JSON.parse(responseText);
+                        if (infoData.contents) {
+                            const info = JSON.parse(infoData.contents);
+                            videoTitleText = info.title || 'YouTube Video';
+                        }
+                    } catch (e) {
+                        console.log('Could not parse video info JSON:', e);
+                    }
+                }
+            }
+        } catch (e) {
+            console.log('Could not fetch video title:', e);
+        }
+        
+        if (videoTitle) {
+            videoTitle.textContent = `📹 ${videoTitleText}`;
+            videoInfo.style.display = 'flex';
+        }
+        
+        // Fetch transcript using CORS proxy
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(transcriptUrl)}`;
+        const response = await fetch(proxyUrl);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Get response as text first to check if it's valid
+        const responseText = await response.text();
+        
+        if (!responseText || !responseText.trim()) {
+            throw new Error('Empty response from transcript API. The video may not have captions enabled.');
+        }
+        
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (jsonError) {
+            // If JSON parsing fails, try to use the response directly as XML
+            console.log('Response is not JSON, trying to parse as XML directly:', jsonError);
+            
+            // Try to parse as XML directly
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(responseText, 'text/xml');
+            const parseError = xmlDoc.querySelector('parsererror');
+            
+            if (parseError) {
+                throw new Error('Could not parse transcript. The video may not have captions available or the API returned an invalid response.');
+            }
+            
+            // If we can parse it as XML, use it directly
+            const textElements = xmlDoc.getElementsByTagName('text');
+            
+            if (textElements.length === 0) {
+                throw new Error('No transcript available for this video. The video may not have captions enabled.');
+            }
+            
+            // Extract text from transcript
+            let fullTranscript = '';
+            const transcriptLines = [];
+            
+            for (let i = 0; i < textElements.length; i++) {
+                const text = textElements[i].textContent || '';
+                const start = textElements[i].getAttribute('start') || '';
+                if (text.trim()) {
+                    transcriptLines.push({
+                        text: text.trim(),
+                        time: parseFloat(start)
+                    });
+                    fullTranscript += text.trim() + ' ';
+                }
+            }
+            
+            youtubeTranscriptText = fullTranscript.trim();
+            
+            // Format transcript with timestamps
+            const formattedTranscript = transcriptLines.map((line, index) => {
+                const minutes = Math.floor(line.time / 60);
+                const seconds = Math.floor(line.time % 60);
+                const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                return `<div class="transcript-line" data-time="${line.time}">
+                    <span class="transcript-time">[${timeStr}]</span>
+                    <span class="transcript-text-content">${line.text}</span>
+                </div>`;
+            }).join('');
+            
+            if (transcriptText) {
+                transcriptText.innerHTML = formattedTranscript || '<div style="color: #EF4444;">No transcript text found.</div>';
+            }
+            
+            if (transcriptControls) transcriptControls.style.display = 'block';
+            
+            fetchBtn.disabled = false;
+            fetchBtn.textContent = '📝 Get Transcript';
+            
+            speak(`Transcript loaded successfully. ${transcriptLines.length} lines found.`);
+            playSound('success');
+            return; // Exit early since we've processed it
+        }
+        
+        if (!data || !data.contents) {
+            throw new Error('No transcript content received from API');
+        }
+        
+        // Parse XML transcript
+        if (!data.contents || typeof data.contents !== 'string') {
+            throw new Error('Invalid transcript content format');
+        }
+        
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(data.contents, 'text/xml');
+        
+        // Check for XML parsing errors
+        const parseError = xmlDoc.querySelector('parsererror');
+        if (parseError) {
+            throw new Error('Could not parse transcript XML. The video may not have captions available.');
+        }
+        
+        const textElements = xmlDoc.getElementsByTagName('text');
+        
+        if (textElements.length === 0) {
+            throw new Error('No transcript available for this video. The video may not have captions enabled.');
+        }
+        
+        // Extract text from transcript
+        let fullTranscript = '';
+        const transcriptLines = [];
+        
+        for (let i = 0; i < textElements.length; i++) {
+            const text = textElements[i].textContent || '';
+            const start = textElements[i].getAttribute('start') || '';
+            if (text.trim()) {
+                transcriptLines.push({
+                    text: text.trim(),
+                    time: parseFloat(start)
+                });
+                fullTranscript += text.trim() + ' ';
+            }
+        }
+        
+        youtubeTranscriptText = fullTranscript.trim();
+        
+        // Format transcript with timestamps
+        const formattedTranscript = transcriptLines.map((line, index) => {
+            const minutes = Math.floor(line.time / 60);
+            const seconds = Math.floor(line.time % 60);
+            const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            return `<div class="transcript-line" data-time="${line.time}">
+                <span class="transcript-time">[${timeStr}]</span>
+                <span class="transcript-text-content">${line.text}</span>
+            </div>`;
+        }).join('');
+        
+        if (transcriptText) {
+            transcriptText.innerHTML = formattedTranscript || '<div style="color: #EF4444;">No transcript text found.</div>';
+        }
+        
+        if (transcriptControls) transcriptControls.style.display = 'block';
+        
+        fetchBtn.disabled = false;
+        fetchBtn.textContent = '📝 Get Transcript';
+        
+        speak(`Transcript loaded successfully. ${transcriptLines.length} lines found.`);
+        playSound('success');
+        
+    } catch (error) {
+        console.error('Transcript fetch error:', error);
+        
+        let errorMessage = error.message || 'Failed to fetch transcript';
+        let helpfulMessage = '';
+        
+        if (errorMessage.includes('No transcript available') || errorMessage.includes('captions')) {
+            helpfulMessage = `
+                <div style="background: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px; border-radius: 8px; margin-top: 8px;">
+                    <strong style="color: #DC2626;">⚠️ No Transcript Available</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #991B1B;">
+                        This video doesn't have captions/transcripts enabled. To get a transcript:
+                    </p>
+                    <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px; color: #991B1B;">
+                        <li>The video creator needs to enable captions</li>
+                        <li>Try a different video that has captions</li>
+                        <li>Some videos have auto-generated captions that may not be available via API</li>
+                    </ul>
+                </div>
+            `;
+        } else {
+            helpfulMessage = `
+                <div style="background: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px; border-radius: 8px; margin-top: 8px;">
+                    <strong style="color: #DC2626;">⚠️ Error</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #991B1B;">
+                        ${errorMessage}
+                    </p>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #991B1B;">
+                        Please check the video URL and try again. Make sure the video has captions enabled.
+                    </p>
+                </div>
+            `;
+        }
+        
+        if (transcriptText) {
+            transcriptText.innerHTML = `<div style="color: #EF4444; padding: 20px; text-align: center;">
+                ❌ ${errorMessage}${helpfulMessage}
+            </div>`;
+        }
+        
+        fetchBtn.disabled = false;
+        fetchBtn.textContent = '📝 Get Transcript';
+        
+        speak('Error fetching transcript');
+        playSound('error');
+    }
+}
+
+function readYouTubeTranscript() {
+    if (!youtubeTranscriptText || youtubeTranscriptText.trim() === '') {
+        alert('No transcript to read!');
+        speak('No transcript available');
+        return;
+    }
+    
+    if (isReadingTranscript) {
+        resumeTranscriptReading();
+        return;
+    }
+    
+    isReadingTranscript = true;
+    
+    const readBtn = document.getElementById('readTranscriptBtn');
+    const pauseBtn = document.getElementById('pauseTranscriptBtn');
+    const stopBtn = document.getElementById('stopTranscriptBtn');
+    
+    if (readBtn) readBtn.style.display = 'none';
+    if (pauseBtn) pauseBtn.style.display = 'block';
+    if (stopBtn) stopBtn.style.display = 'block';
+    
+    // Split text into sentences for better reading
+    const sentences = youtubeTranscriptText.split(/[.!?]+\s+/).filter(s => s.trim().length > 0);
+    let currentSentenceIndex = 0;
+    const totalSentences = sentences.length;
+    
+    function readNextSentence() {
+        if (!isReadingTranscript || currentSentenceIndex >= totalSentences) {
+            stopTranscriptReading();
+            return;
+        }
+        
+        const sentence = sentences[currentSentenceIndex].trim();
+        if (!sentence) {
+            currentSentenceIndex++;
+            readNextSentence();
+            return;
+        }
+        
+        // Create speech utterance
+        transcriptSpeechUtterance = new SpeechSynthesisUtterance(sentence);
+        transcriptSpeechUtterance.rate = settings.ttsRate || 1.0;
+        transcriptSpeechUtterance.pitch = 1.0;
+        transcriptSpeechUtterance.volume = 1.0;
+        
+        transcriptSpeechUtterance.onend = () => {
+            currentSentenceIndex++;
+            setTimeout(readNextSentence, 300); // Small pause between sentences
+        };
+        
+        transcriptSpeechUtterance.onerror = (error) => {
+            console.error('Speech error:', error);
+            currentSentenceIndex++;
+            setTimeout(readNextSentence, 300);
+        };
+        
+        window.speechSynthesis.speak(transcriptSpeechUtterance);
+    }
+    
+    readNextSentence();
+    playSound('click');
+}
+
+function pauseTranscriptReading() {
+    if (!isReadingTranscript) return;
+    
+    window.speechSynthesis.pause();
+    
+    const pauseBtn = document.getElementById('pauseTranscriptBtn');
+    const resumeBtn = document.getElementById('readTranscriptBtn');
+    
+    if (pauseBtn) pauseBtn.style.display = 'none';
+    if (resumeBtn) {
+        resumeBtn.style.display = 'block';
+        resumeBtn.textContent = '▶️ Resume Reading';
+    }
+    
+    playSound('click');
+}
+
+function resumeTranscriptReading() {
+    if (!isReadingTranscript) return;
+    
+    window.speechSynthesis.resume();
+    
+    const pauseBtn = document.getElementById('pauseTranscriptBtn');
+    const resumeBtn = document.getElementById('readTranscriptBtn');
+    
+    if (pauseBtn) pauseBtn.style.display = 'block';
+    if (resumeBtn) resumeBtn.style.display = 'none';
+    
+    playSound('click');
+}
+
+function stopTranscriptReading() {
+    isReadingTranscript = false;
+    window.speechSynthesis.cancel();
+    transcriptSpeechUtterance = null;
+    
+    const readBtn = document.getElementById('readTranscriptBtn');
+    const pauseBtn = document.getElementById('pauseTranscriptBtn');
+    const stopBtn = document.getElementById('stopTranscriptBtn');
+    
+    if (readBtn) {
+        readBtn.style.display = 'block';
+        readBtn.textContent = '🔊 Read Transcript';
+    }
+    if (pauseBtn) pauseBtn.style.display = 'none';
+    if (stopBtn) stopBtn.style.display = 'none';
+    
+    speak('Reading stopped');
+    playSound('click');
+}
+
+function clearYouTubeTranscript() {
+    stopTranscriptReading();
+    
+    youtubeTranscriptText = '';
+    
+    const urlInput = document.getElementById('youtubeUrlInput');
+    const videoInfo = document.getElementById('youtubeVideoInfo');
+    const transcriptContent = document.getElementById('youtubeTranscriptContent');
+    const transcriptControls = document.getElementById('youtubeTranscriptControls');
+    
+    if (urlInput) urlInput.value = '';
+    if (videoInfo) videoInfo.style.display = 'none';
+    if (transcriptContent) transcriptContent.style.display = 'none';
+    if (transcriptControls) transcriptControls.style.display = 'none';
+    
+    playSound('click');
+    speak('Transcript cleared');
+}
+
+function initYouTubeTranscript() {
+    const urlInput = document.getElementById('youtubeUrlInput');
+    if (!urlInput) return;
+    
+    // Allow Enter key to trigger transcript fetch
+    urlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            fetchYouTubeTranscript();
+        }
+    });
+    
+    // Auto-focus the input
+    setTimeout(() => {
+        urlInput.focus();
+    }, 200);
 }
 
 // Initialize drag and drop for image upload
@@ -2195,6 +2963,89 @@ function renderSupportFeatures(category) {
                     <div id="imageResultText" style="min-height: 40px; padding: 8px 0;"></div>
                 </div>
             </div>
+            <div class="support-widget">
+                <h3>📄 PDF Reader</h3>
+                <p>Upload a PDF file and we'll read it aloud for you!</p>
+                
+                <div class="pdf-upload-area" id="pdfUploadArea">
+                    <input type="file" id="pdfUploadInput" accept=".pdf" style="display: none;" onchange="handlePdfUpload(event)">
+                    <label for="pdfUploadInput" class="upload-label">
+                        <span class="upload-icon">📄</span>
+                        <span class="upload-text">Click to Upload PDF</span>
+                        <span class="upload-hint">or drag and drop</span>
+                    </label>
+                    <div class="pdf-info" id="pdfInfo" style="display: none;">
+                        <div class="pdf-file-name" id="pdfFileName"></div>
+                        <button class="remove-pdf-btn" onclick="removePdf()">✖</button>
+                    </div>
+                </div>
+                
+                <div class="pdf-controls" id="pdfControls" style="display: none;">
+                    <button class="tip-btn" id="readPdfBtn" onclick="readPdf()" style="width: 100%; margin-top: 12px;">
+                        🔊 Read PDF
+                    </button>
+                    <button class="tip-btn" id="pausePdfBtn" onclick="pausePdfReading()" style="width: 100%; margin-top: 8px; display: none;">
+                        ⏸️ Pause Reading
+                    </button>
+                    <button class="tip-btn" id="stopPdfBtn" onclick="stopPdfReading()" style="width: 100%; margin-top: 8px; display: none;">
+                        ⏹️ Stop Reading
+                    </button>
+                    <div class="pdf-progress" id="pdfProgress" style="display: none;">
+                        <div class="pdf-progress-bar">
+                            <div class="pdf-progress-fill" id="pdfProgressFill"></div>
+                        </div>
+                        <div class="pdf-progress-text" id="pdfProgressText">Reading page 1 of 10...</div>
+                    </div>
+                </div>
+                
+                <div class="pdf-content" id="pdfContent" style="display: none;">
+                    <h4>📖 PDF Content:</h4>
+                    <div class="pdf-text-container" id="pdfTextContainer">
+                        <div class="pdf-text" id="pdfText"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="support-widget">
+                <h3>🎥 YouTube Transcript</h3>
+                <p>Paste a YouTube video link to get the transcript in text format!</p>
+                
+                <div class="youtube-input-area" id="youtubeInputArea">
+                    <input 
+                        type="text" 
+                        id="youtubeUrlInput" 
+                        class="youtube-url-input" 
+                        placeholder="Paste YouTube URL here (e.g., https://www.youtube.com/watch?v=...)"
+                        autocomplete="off"
+                    >
+                    <button class="tip-btn" id="fetchTranscriptBtn" onclick="fetchYouTubeTranscript()" style="width: 100%; margin-top: 12px;">
+                        📝 Get Transcript
+                    </button>
+                </div>
+                
+                <div class="youtube-video-info" id="youtubeVideoInfo" style="display: none;">
+                    <div class="video-title" id="youtubeVideoTitle"></div>
+                    <button class="remove-youtube-btn" onclick="clearYouTubeTranscript()">✖</button>
+                </div>
+                
+                <div class="youtube-transcript-controls" id="youtubeTranscriptControls" style="display: none;">
+                    <button class="tip-btn" id="readTranscriptBtn" onclick="readYouTubeTranscript()" style="width: 100%; margin-top: 12px;">
+                        🔊 Read Transcript
+                    </button>
+                    <button class="tip-btn" id="pauseTranscriptBtn" onclick="pauseTranscriptReading()" style="width: 100%; margin-top: 8px; display: none;">
+                        ⏸️ Pause Reading
+                    </button>
+                    <button class="tip-btn" id="stopTranscriptBtn" onclick="stopTranscriptReading()" style="width: 100%; margin-top: 8px; display: none;">
+                        ⏹️ Stop Reading
+                    </button>
+                </div>
+                
+                <div class="youtube-transcript-content" id="youtubeTranscriptContent" style="display: none;">
+                    <h4>📄 Transcript:</h4>
+                    <div class="transcript-text-container" id="transcriptTextContainer">
+                        <div class="transcript-text" id="transcriptText"></div>
+                    </div>
+                </div>
+            </div>
         `,
         custom: `
             <div class="support-widget">
@@ -2303,6 +3154,8 @@ function renderSupportFeatures(category) {
         // Initialize image upload drag and drop
         setTimeout(() => {
             initImageUploadDragDrop();
+            initPdfUploadDragDrop();
+            initYouTubeTranscript();
             updateApiKeyStatus();
         }, 100);
     }
