@@ -470,3 +470,45 @@ body.accessibility-mode .community-modal .close-community-modal {
 body.accessibility-mode .community-modal .close-community-modal:hover {
     background: #4b5563 !important;
 }
+
+/* Feedback Section - Accessibility Mode */
+body.accessibility-mode .feedback-section {
+    background: #1F2937;
+    color: #FFFFFF;
+}
+
+body.accessibility-mode .feedback-card {
+    background: #374151;
+    border: 3px solid #FFFFFF;
+    color: #FFFFFF;
+}
+
+body.accessibility-mode .feedback-card-header {
+    background: linear-gradient(135deg, #FFFFFF, #E5E7EB);
+    color: #1F2937;
+}
+
+body.accessibility-mode .feedback-card-title {
+    color: #1F2937;
+}
+
+body.accessibility-mode .feedback-card-description {
+    color: #E5E7EB;
+}
+
+body.accessibility-mode .feedback-btn {
+    background: #FFFFFF;
+    color: #1F2937;
+    border: 3px solid #FFFFFF;
+    font-weight: 700;
+}
+
+body.accessibility-mode .feedback-btn:hover {
+    background: #E5E7EB;
+    border-color: #FFFFFF;
+}
+
+body.accessibility-mode .feedback-btn:focus {
+    outline: 3px solid #FFFFFF;
+    outline-offset: 3px;
+}

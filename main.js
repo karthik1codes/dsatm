@@ -886,6 +886,30 @@ function startLearning() {
     }
 }
 
+// Feedback Form Functions
+function openFeedbackForm(formType) {
+    // Google Form links
+    const feedbackForms = {
+        'overall': 'https://forms.gle/gaCtLrhYftNxYFyN6',
+        'activities': 'https://forms.gle/XbvrZtWcgpU6i6gG6',
+        'accessibility': 'https://forms.gle/Q6AqrMv4G7ZtVJSNA',
+        'ux': 'https://forms.gle/7NiAmqrt8AUibwfq6',
+        'features': 'https://forms.gle/BpYkPWwx3jiUTxtV6'
+    };
+    
+    const formUrl = feedbackForms[formType];
+    
+    if (formUrl) {
+        window.open(formUrl, '_blank', 'noopener,noreferrer');
+        speak('Opening feedback form');
+        playSound('click');
+    } else {
+        alert('Feedback form not available. Please try again later.');
+        speak('Feedback form not available');
+        playSound('error');
+    }
+}
+
 // Learning Tips Function
 function getRandomTip() {
     const tipElement = document.getElementById('learningTip');

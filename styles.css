@@ -188,6 +188,133 @@ body.authenticated .auth-overlay {
 }
 
 /* Site Footer */
+/* Feedback Section */
+.feedback-section {
+    padding: 60px 20px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(237, 233, 254, 0.3));
+    margin-top: 40px;
+}
+
+.feedback-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    max-width: 1200px;
+    margin: 40px auto 0;
+    padding: 0 20px;
+}
+
+.feedback-card {
+    background: white;
+    border-radius: 20px;
+    border: 2px solid rgba(139, 92, 246, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.feedback-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.2);
+    border-color: var(--primary-purple);
+}
+
+.feedback-card-header {
+    background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+    color: white;
+    padding: 20px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.feedback-icon {
+    font-size: 32px;
+    display: block;
+}
+
+.feedback-card-title {
+    font-family: 'Fredoka', cursive;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+    color: white;
+}
+
+.feedback-card-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1;
+    gap: 20px;
+}
+
+.feedback-card-description {
+    color: #4B5563;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.feedback-btn {
+    background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.feedback-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.feedback-btn:active {
+    transform: translateY(0);
+}
+
+.feedback-btn:focus {
+    outline: 3px solid rgba(139, 92, 246, 0.3);
+    outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+    .feedback-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 0 10px;
+    }
+    
+    .feedback-section {
+        padding: 40px 15px;
+    }
+    
+    .feedback-card-header {
+        padding: 16px 20px;
+    }
+    
+    .feedback-card-body {
+        padding: 20px;
+    }
+}
+
 .site-footer {
     text-align: center;
     padding: 30px 20px 40px;

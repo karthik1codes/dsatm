@@ -49,6 +49,7 @@
                     <a href="#progress" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Progress</a>
                     <a href="#games" class="nav-item" role="menuitem" aria-describedby="keyboardHint" onclick="scrollToGames(event)">Games</a>
                     <a href="#parents" class="nav-item" role="menuitem" aria-describedby="keyboardHint" onclick="openParentsCommunity(event)">Parents</a>
+                    <a href="#feedback" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Feedback</a>
                 </div>
 
                 <div class="user-section" aria-label="User quick actions">
@@ -458,6 +459,98 @@
             </div>
         </div>
         </main>
+
+        <!-- Feedback Section -->
+        <section class="feedback-section" id="feedback" role="region" aria-label="Feedback section">
+            <div class="section-header">
+                <h2 class="section-title">Give Your Feedback!</h2>
+                <p class="section-subtitle">
+                    Help us improve BrightWords by providing your valuable feedback. Your feedback will be used to improve the UI/UX of the website so that we can provide the best possible service to you!
+                </p>
+            </div>
+
+            <div class="feedback-grid">
+                <!-- Feedback Form 1: Overall Website -->
+                <div class="feedback-card">
+                    <div class="feedback-card-header">
+                        <span class="feedback-icon">🌐</span>
+                        <h3 class="feedback-card-title">Overall Website Feedback</h3>
+                    </div>
+                    <div class="feedback-card-body">
+                        <p class="feedback-card-description">
+                            Tell us what you think about the overall website design. Rate our webpage on various metrics like satisfaction, appearance, usability, and accessibility features.
+                        </p>
+                        <button class="feedback-btn" onclick="openFeedbackForm('overall')" aria-label="Open overall website feedback form">
+                            📝 Open Feedback Form
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feedback Form 2: Learning Activities -->
+                <div class="feedback-card">
+                    <div class="feedback-card-header">
+                        <span class="feedback-icon">🎮</span>
+                        <h3 class="feedback-card-title">Learning Activities Feedback</h3>
+                    </div>
+                    <div class="feedback-card-body">
+                        <p class="feedback-card-description">
+                            Share your experience with our learning activities (Phonics Fun, Spelling Wizard, Story Explorer, Memory Master). Help us improve the educational content and gameplay.
+                        </p>
+                        <button class="feedback-btn" onclick="openFeedbackForm('activities')" aria-label="Open learning activities feedback form">
+                            📝 Open Feedback Form
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feedback Form 3: Accessibility Features -->
+                <div class="feedback-card">
+                    <div class="feedback-card-header">
+                        <span class="feedback-icon">♿</span>
+                        <h3 class="feedback-card-title">Accessibility Features Feedback</h3>
+                    </div>
+                    <div class="feedback-card-body">
+                        <p class="feedback-card-description">
+                            Help us improve our accessibility features. Tell us how well the support profiles (Blind/Low Vision, Deaf/Hard of Hearing, Neurodiverse) work for you and what we can improve.
+                        </p>
+                        <button class="feedback-btn" onclick="openFeedbackForm('accessibility')" aria-label="Open accessibility features feedback form">
+                            📝 Open Feedback Form
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feedback Form 4: User Experience -->
+                <div class="feedback-card">
+                    <div class="feedback-card-header">
+                        <span class="feedback-icon">✨</span>
+                        <h3 class="feedback-card-title">User Experience Feedback</h3>
+                    </div>
+                    <div class="feedback-card-body">
+                        <p class="feedback-card-description">
+                            Share your thoughts on the user experience, navigation, ease of use, and overall satisfaction with BrightWords. Your input helps us create a better learning platform.
+                        </p>
+                        <button class="feedback-btn" onclick="openFeedbackForm('ux')" aria-label="Open user experience feedback form">
+                            📝 Open Feedback Form
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feedback Form 5: New Features & Suggestions -->
+                <div class="feedback-card">
+                    <div class="feedback-card-header">
+                        <span class="feedback-icon">💡</span>
+                        <h3 class="feedback-card-title">Feature Suggestions</h3>
+                    </div>
+                    <div class="feedback-card-body">
+                        <p class="feedback-card-description">
+                            Have ideas for new features or improvements? Let us know what features you'd like to see added to BrightWords to make learning even better!
+                        </p>
+                        <button class="feedback-btn" onclick="openFeedbackForm('features')" aria-label="Open feature suggestions feedback form">
+                            📝 Open Feedback Form
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 
     <!-- Settings Panel -->
