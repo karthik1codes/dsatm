@@ -775,15 +775,16 @@ function resetDailyProgress() {
 function openParentsCommunity(event) {
     event.preventDefault();
     
-    // WhatsApp Group Invite Link
+    // Community Group Links
     const whatsappGroupLink = 'https://chat.whatsapp.com/BSkBimGGf4mLmXS7nmO6v5';
+    const facebookGroupLink = 'https://www.facebook.com/share/g/17EuP58o8s/';
     
     // Show community information dialog
-    showParentsCommunityDialog(whatsappGroupLink);
+    showParentsCommunityDialog(whatsappGroupLink, facebookGroupLink);
     playSound('click');
 }
 
-function showParentsCommunityDialog(whatsappLink) {
+function showParentsCommunityDialog(whatsappLink, facebookLink) {
     // Create modal overlay
     const overlay = document.createElement('div');
     overlay.className = 'community-modal-overlay';
@@ -816,7 +817,7 @@ function showParentsCommunityDialog(whatsappLink) {
             👨‍👩‍👧‍👦 Parents & Community
         </h2>
         <p style="color: #6B7280; text-align: center; margin-bottom: 20px; line-height: 1.6;">
-            Join our WhatsApp community where parents and differently abled children can connect, share experiences, and support each other!
+            Join our community where parents and differently abled children can connect, share experiences, and support each other! Choose your preferred platform below.
         </p>
         <div style="background: #F3F4F6; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
             <h3 style="font-size: 18px; color: #1F2937; margin-bottom: 12px; font-weight: 600;">
@@ -830,7 +831,7 @@ function showParentsCommunityDialog(whatsappLink) {
             </ul>
         </div>
         <div style="display: flex; flex-direction: column; gap: 12px;">
-            <button class="join-community-btn" data-link="${whatsappLink}" style="
+            <button class="join-community-btn" data-link="${whatsappLink}" data-platform="WhatsApp" style="
                 background: linear-gradient(135deg, #25D366, #128C7E);
                 color: white;
                 border: none;
@@ -846,6 +847,23 @@ function showParentsCommunityDialog(whatsappLink) {
                 gap: 10px;
             ">
                 💬 Join WhatsApp Community
+            </button>
+            <button class="join-community-btn" data-link="${facebookLink}" data-platform="Facebook" style="
+                background: linear-gradient(135deg, #1877F2, #42A5F5);
+                color: white;
+                border: none;
+                padding: 18px 24px;
+                border-radius: 16px;
+                font-size: 18px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            ">
+                📘 Join Facebook Community
             </button>
             <button class="close-community-modal" style="
                 background: #F3F4F6;
@@ -865,27 +883,33 @@ function showParentsCommunityDialog(whatsappLink) {
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
     
-    // Join button functionality
-    const joinBtn = modal.querySelector('.join-community-btn');
-    joinBtn.addEventListener('mouseenter', () => {
-        joinBtn.style.transform = 'translateY(-2px)';
-        joinBtn.style.boxShadow = '0 8px 20px rgba(37, 211, 102, 0.3)';
-    });
-    joinBtn.addEventListener('mouseleave', () => {
-        joinBtn.style.transform = 'translateY(0)';
-        joinBtn.style.boxShadow = 'none';
-    });
-    joinBtn.addEventListener('click', () => {
-        const link = joinBtn.getAttribute('data-link');
-        if (link && !link.includes('YOUR_GROUP_INVITE_CODE')) {
-            window.open(link, '_blank');
-            speak('Opening WhatsApp community');
-        } else {
-            alert('WhatsApp group link not configured. Please contact the administrator.');
-            speak('WhatsApp group link not available');
-        }
-        closeCommunityModal();
-        playSound('click');
+    // Join button functionality for both WhatsApp and Facebook
+    const joinButtons = modal.querySelectorAll('.join-community-btn');
+    joinButtons.forEach(btn => {
+        const isWhatsApp = btn.getAttribute('data-platform') === 'WhatsApp';
+        const shadowColor = isWhatsApp ? 'rgba(37, 211, 102, 0.3)' : 'rgba(24, 119, 242, 0.3)';
+        
+        btn.addEventListener('mouseenter', () => {
+            btn.style.transform = 'translateY(-2px)';
+            btn.style.boxShadow = `0 8px 20px ${shadowColor}`;
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.transform = 'translateY(0)';
+            btn.style.boxShadow = 'none';
+        });
+        btn.addEventListener('click', () => {
+            const link = btn.getAttribute('data-link');
+            const platform = btn.getAttribute('data-platform');
+            if (link && link.trim() !== '') {
+                window.open(link, '_blank');
+                speak(`Opening ${platform} community`);
+            } else {
+                alert(`${platform} group link not configured. Please contact the administrator.`);
+                speak(`${platform} group link not available`);
+            }
+            closeCommunityModal();
+            playSound('click');
+        });
     });
     
     // Close button
