@@ -6,10 +6,14 @@
     <title>BrightWords - Fun Learning for Every Child</title>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="accessibility.css">
 </head>
 <body>
+    <a href="#mainContent" class="skip-link" id="skipLink" aria-describedby="keyboardHint">Skip to main content</a>
+    <div id="accessibilityAnnouncement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div id="keyboardHint" class="sr-only">Use Tab to move between controls. Press Space or Enter to activate buttons.</div>
     <!-- Background Decorations -->
-    <div class="bg-decoration">
+    <div class="bg-decoration" aria-hidden="true">
         <div class="cloud cloud1"></div>
         <div class="cloud cloud2"></div>
         <div class="shape shape-circle"></div>
@@ -19,38 +23,63 @@
     <!-- Main Container -->
     <div class="main-container">
         <!-- Navigation Header -->
-        <nav class="nav-header">
-            <div class="logo">
-                <div class="logo-icon">✨</div>
-                <span>BrightWords</span>
-            </div>
-            
-            <div class="nav-menu">
-                <a href="#home" class="nav-item">Home</a>
-                <a href="#learn" class="nav-item">Learn</a>
-                <a href="#progress" class="nav-item">Progress</a>
-                <a href="#games" class="nav-item">Games</a>
-                <a href="#parents" class="nav-item">Parents</a>
-            </div>
-
-            <div class="user-section">
-                <div class="streak-badge">
-                    🔥 <span id="streakCount">5</span> Day Streak!
+        <header class="site-header" role="banner">
+            <nav class="nav-header" role="navigation" aria-label="Primary navigation">
+                <div class="logo" aria-label="BrightWords home">
+                    <div class="logo-icon" aria-hidden="true">✨</div>
+                    <span>BrightWords</span>
                 </div>
-                <div class="avatar" onclick="toggleSettings()">👤</div>
-            </div>
-        </nav>
+                
+                <div class="nav-menu" role="menubar" aria-label="Primary menu">
+                    <a href="#home" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Home</a>
+                    <a href="#learn" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Learn</a>
+                    <a href="#progress" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Progress</a>
+                    <a href="#games" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Games</a>
+                    <a href="#parents" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Parents</a>
+                </div>
 
+                <div class="user-section" aria-label="User quick actions">
+                    <div class="streak-badge" aria-label="Current streak">
+                        🔥 <span id="streakCount">5</span> Day Streak!
+                    </div>
+                    <div class="accessibility-controls">
+                        <button type="button"
+                                id="accessibilityToggle"
+                                class="accessibility-toggle"
+                                aria-pressed="false"
+                                aria-describedby="keyboardHint accessibilityHint">
+                            ♿ Accessibility Mode
+                        </button>
+                    </div>
+                    <div class="avatar"
+                         role="button"
+                         tabindex="0"
+                         aria-label="Open settings"
+                         onclick="toggleSettings()"
+                         onkeypress="if(event.key==='Enter' || event.key===' '){toggleSettings(); event.preventDefault();}">
+                        👤
+                    </div>
+                </div>
+            </nav>
+        </header>
+        <p id="accessibilityHint" class="sr-only">Switch to a high-contrast, dyslexia-friendly view.</p>
+
+        <!-- Main Content -->
+        <main id="mainContent" role="main" tabindex="-1">
         <!-- Hero Section -->
-        <section class="hero-section">
+        <section class="hero-section" id="home">
             <div class="hero-content">
                 <h1 class="hero-title">
-                    Learning Made <span>Fun & Easy</span> for Every Child
+                    BrightWords makes learning feel bold, fast, and joyful.
                 </h1>
                 <p class="hero-description">
-                    AI-powered personalized learning support for children with dyslexia and dysgraphia. 
-                    Build confidence through interactive games, multisensory activities, and real-time feedback!
+                    Quick wins, friendly guidance, and playful practice crafted for every kind of brain.
                 </p>
+                <ul class="hero-highlights" aria-label="Key benefits">
+                    <li>⚡ 5-minute missions</li>
+                    <li>🎯 Personalized boosts</li>
+                    <li>🧠 Neuro-inclusive fun</li>
+                </ul>
                 <div class="cta-buttons">
                     <button class="btn-primary" onclick="startLearning()">
                         🚀 Start Learning
@@ -67,7 +96,7 @@
         </section>
 
         <!-- Accessibility Support Section -->
-        <section class="accessibility-section" id="support">
+        <section class="accessibility-section" id="support" aria-label="Accessibility support selection">
             <div class="section-header">
                 <h2 class="section-title">Choose Your Support Needs</h2>
                 <p class="section-subtitle">
@@ -112,10 +141,15 @@
             <div class="support-message" id="categoryMessage">
                 General support mode active. Select another profile if needed.
             </div>
+
+            <div class="support-feature-panel" id="supportFeaturePanel" aria-live="polite">
+                <h3 class="feature-title">Adaptive Boosts</h3>
+                <p class="feature-description">Pick a profile above to unlock a focused helper.</p>
+            </div>
         </section>
 
         <!-- Stats Dashboard -->
-        <div class="stats-container">
+        <div class="stats-container" id="progress" role="region" aria-label="Learner statistics">
             <div class="stat-card">
                 <div class="stat-icon">⭐</div>
                 <div class="stat-value" id="totalPoints">250</div>
@@ -139,7 +173,7 @@
         </div>
 
         <!-- Learning Modules Section -->
-        <section class="modules-section">
+        <section class="modules-section" id="learn">
             <div class="section-header">
                 <h2 class="section-title">Choose Your Adventure</h2>
                 <p class="section-subtitle">Pick a module and start your learning journey!</p>
@@ -147,7 +181,12 @@
 
             <div class="modules-grid">
                 <!-- Phonics Module -->
-                <div class="module-card" onclick="openModule('phonics')">
+                <div class="module-card"
+                     onclick="openModule('phonics')"
+                     role="button"
+                     tabindex="0"
+                     aria-label="Open Phonics Fun module"
+                     onkeypress="if(event.key==='Enter' || event.key===' '){openModule('phonics'); event.preventDefault();}">
                     <div class="module-header">
                         <div class="module-icon-wrapper module-icon-purple">
                             <span>🔤</span>
@@ -176,7 +215,12 @@
                 </div>
 
                 <!-- Spelling Module -->
-                <div class="module-card" onclick="openModule('spelling')">
+                <div class="module-card"
+                     onclick="openModule('spelling')"
+                     role="button"
+                     tabindex="0"
+                     aria-label="Open Spelling Wizard module"
+                     onkeypress="if(event.key==='Enter' || event.key===' '){openModule('spelling'); event.preventDefault();}">
                     <div class="module-header">
                         <div class="module-icon-wrapper module-icon-pink">
                             <span>✏️</span>
@@ -205,7 +249,12 @@
                 </div>
 
                 <!-- Writing Module -->
-                <div class="module-card" onclick="openModule('writing')">
+                <div class="module-card"
+                     onclick="openModule('writing')"
+                     role="button"
+                     tabindex="0"
+                     aria-label="Open Writing Artist module"
+                     onkeypress="if(event.key==='Enter' || event.key===' '){openModule('writing'); event.preventDefault();}">
                     <div class="module-header">
                         <div class="module-icon-wrapper module-icon-blue">
                             <span>🎨</span>
@@ -234,7 +283,12 @@
                 </div>
 
                 <!-- Reading Module -->
-                <div class="module-card" onclick="openModule('reading')">
+                <div class="module-card"
+                     onclick="openModule('reading')"
+                     role="button"
+                     tabindex="0"
+                     aria-label="Open Story Explorer module"
+                     onkeypress="if(event.key==='Enter' || event.key===' '){openModule('reading'); event.preventDefault();}">
                     <div class="module-header">
                         <div class="module-icon-wrapper module-icon-green">
                             <span>📖</span>
@@ -263,7 +317,12 @@
                 </div>
 
                 <!-- Memory Module -->
-                <div class="module-card" onclick="openModule('memory')">
+                <div class="module-card"
+                     onclick="openModule('memory')"
+                     role="button"
+                     tabindex="0"
+                     aria-label="Open Memory Master module"
+                     onkeypress="if(event.key==='Enter' || event.key===' '){openModule('memory'); event.preventDefault();}">
                     <div class="module-header">
                         <div class="module-icon-wrapper module-icon-yellow">
                             <span>🧠</span>
@@ -292,7 +351,12 @@
                 </div>
 
                 <!-- Story Builder Module -->
-                <div class="module-card" onclick="openModule('stories')">
+                <div class="module-card"
+                     onclick="openModule('stories')"
+                     role="button"
+                     tabindex="0"
+                     aria-label="Open Story Creator module"
+                     onkeypress="if(event.key==='Enter' || event.key===' '){openModule('stories'); event.preventDefault();}">
                     <div class="module-header">
                         <div class="module-icon-wrapper module-icon-orange">
                             <span>🚀</span>
@@ -323,25 +387,26 @@
         </section>
 
         <!-- Interactive Learning Area -->
-        <div class="learning-area" id="learningArea">
+        <div class="learning-area" id="learningArea" role="region" aria-live="polite">
             <div class="learning-header">
                 <h2 class="learning-title">
                     <span id="moduleName">Phonics Fun</span>
                 </h2>
-                <button class="close-btn" onclick="closeLearningArea()">✖</button>
+                <button class="close-btn" onclick="closeLearningArea()" aria-label="Close learning area">✖</button>
             </div>
             
             <div class="game-container" id="gameContainer">
                 <!-- Dynamic content will be loaded here -->
             </div>
         </div>
+        </main>
     </div>
 
     <!-- Settings Panel -->
-    <div class="settings-panel" id="settingsPanel">
+    <aside class="settings-panel" id="settingsPanel" role="complementary" aria-label="User settings" data-focus-trap="open">
         <div class="settings-header">
             <h3 class="settings-title">⚙️ Settings</h3>
-            <button class="close-btn" onclick="toggleSettings()">✖</button>
+            <button class="close-btn" onclick="toggleSettings()" aria-label="Close settings panel">✖</button>
         </div>
         
         <div class="setting-item">
@@ -392,16 +457,22 @@
                 <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #F59E0B, #FB923C); border-radius: 10px; cursor: pointer;"></div>
             </div>
         </div>
-    </div>
+    </aside>
 
     <!-- Achievement Popup -->
-    <div class="achievement-popup" id="achievementPopup">
+    <div class="achievement-popup" id="achievementPopup" role="dialog" aria-modal="true" aria-labelledby="achievementTitle" data-focus-trap="show">
         <div class="achievement-icon">🏆</div>
         <h3 class="achievement-title" id="achievementTitle">Amazing!</h3>
         <p class="achievement-desc" id="achievementDesc">You've earned a new achievement!</p>
-        <button class="btn-primary" onclick="closeAchievement()">Continue</button>
+        <button class="btn-primary" onclick="closeAchievement()" aria-label="Close achievement popup">Continue</button>
     </div>
 
+    <footer class="site-footer" role="contentinfo" aria-label="Site footer">
+        <p>BrightWords • Inclusive learning for every child.</p>
+    </footer>
+
     <script src="main.js"></script>
+    <script src="accessibility.js"></script>
 </body>
 </html>
+

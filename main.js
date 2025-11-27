@@ -35,6 +35,14 @@ const supportProfiles = {
 
 // Initialize Speech Synthesis
 const synth = window.speechSynthesis;
+const supportFeaturePanel = document.getElementById('supportFeaturePanel');
+const HF_ENDPOINT = 'https://api-inference.huggingface.co/models/google/flan-t5-base';
+const FALLBACK_REPLIES = [
+    'Try tracing the word while saying each letter in your head.',
+    'Break the task into two tiny steps and celebrate in between.',
+    'Need a hint? Tap the Highlight button beside any story.',
+    'For live help, ping us on WhatsApp at +91-9004436043.'
+];
 
 // Text-to-Speech Function
 function speak(text, rate = 0.8) {
@@ -661,6 +669,7 @@ function selectSupportCategory(category, silent = false) {
     if (messageBox) {
         messageBox.textContent = profile.message;
     }
+    renderSupportFeatures(category);
 
     if (!silent) {
         speak(profile.announcement);
@@ -696,6 +705,202 @@ function setCustomCategory() {
     if (messageBox) {
         messageBox.textContent = 'Custom support active. Adjust profiles anytime.';
     }
+    renderSupportFeatures('custom');
+}
+
+function formatTimestamp(date = new Date()) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+async function fetchAiResponse(prompt) {
+    const apiKey = localStorage.getItem('brightwords_ai_key');
+    const fallback = FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)];
+    if (!apiKey) {
+        return `To unlock the full AI assistant, add your Hugging Face key via localStorage.setItem('brightwords_ai_key','hf_xxx'). Meanwhile, here is a quick tip: ${fallback}`;
+    }
+    const payload = {
+        inputs: `You are BrightWords Whisper Coach, a concise WhatsApp-style assistant who helps deaf and hard-of-hearing learners. Respond in one or two friendly sentences.\nUser: ${prompt}\nAssistant:`,
+        parameters: {
+            max_new_tokens: 120,
+            temperature: 0.4,
+            top_p: 0.9
+        }
+    };
+    try {
+        const response = await fetch(HF_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            throw new Error('AI service is warming up. Please try again.');
+        }
+        const data = await response.json();
+        const text = Array.isArray(data) ? data[0]?.generated_text : data?.generated_text;
+        if (!text) {
+            throw new Error('No reply received yet. Please ask again.');
+        }
+        return text.replace(/assistant[:\-]?\s*/i, '').trim();
+    } catch (error) {
+        console.error(error);
+        return `I'm having trouble reaching the AI right now. ${fallback}`;
+    }
+}
+
+function renderSupportFeatures(category) {
+    if (!supportFeaturePanel) return;
+    const templates = {
+        general: `
+            <div class="support-widget">
+                <h3>Adaptive Boosts</h3>
+                <p>Pick a profile above to unlock tailored helpers like voice guides, visual chats, and focus flows.</p>
+            </div>
+        `,
+        custom: `
+            <div class="support-widget">
+                <h3>Custom Mix</h3>
+                <p>Combine tools from any profile. Adjust settings on the right for a perfect blend.</p>
+            </div>
+        `,
+        blind: `
+            <div class="support-widget" aria-label="Voice assistant helper">
+                <h3>Voice Assistant</h3>
+                <p>Hear friendly guidance that summarizes the current screen and suggests the next step.</p>
+                <button class="voice-btn" id="voiceGuideBtn">🔊 Play guidance</button>
+            </div>
+        `,
+        deaf: `
+            <div class="support-widget" aria-label="Visual helper chat">
+                <h3>Silent Support Chat</h3>
+                <div class="chat-log" id="deafChatLog" aria-live="polite"></div>
+                <div class="chat-input">
+                    <label for="deafChatInput">Ask a quick question</label>
+                    <div class="chat-input-row">
+                        <input type="text" id="deafChatInput" placeholder="Type your message..." aria-label="Chat message">
+                        <button class="chat-send" id="deafChatSend">Send</button>
+                    </div>
+                <p class="chat-hint">Tip: Add your Hugging Face API key via <code>localStorage.setItem('brightwords_ai_key','hf_xxx')</code> to enable full AI answers.</p>
+                </div>
+            </div>
+        `,
+        neurodiverse: `
+            <div class="support-widget" aria-label="Focus routine helper">
+                <h3>Focus Flow</h3>
+                <p>Short bursts with gentle prompts keep things calm and steady.</p>
+                <ol>
+                    <li>Breathe in for 4 beats</li>
+                    <li>Trace or tap for 60 seconds</li>
+                    <li>Celebrate, then repeat</li>
+                </ol>
+                <button class="focus-btn" id="focusFlowBtn">🧘 Start 3-minute flow</button>
+                <p id="focusStatus" role="status"></p>
+            </div>
+        `
+    };
+    supportFeaturePanel.innerHTML = templates[category] || templates.general;
+
+    if (category === 'blind') {
+        const voiceBtn = document.getElementById('voiceGuideBtn');
+        if (voiceBtn) {
+            voiceBtn.addEventListener('click', () => {
+                startVoiceGuide('Here is a quick tour. Use the navigation to jump between learn, progress, or games. The big purple button starts your next mission.');
+            });
+        }
+    }
+
+    if (category === 'deaf') {
+        initChatSupport();
+    }
+
+    if (category === 'neurodiverse') {
+        const focusBtn = document.getElementById('focusFlowBtn');
+        const focusStatus = document.getElementById('focusStatus');
+        if (focusBtn && focusStatus) {
+            focusBtn.addEventListener('click', () => {
+                focusStatus.textContent = 'Starting calm pulse...';
+                playSound('click');
+                setTimeout(() => {
+                    focusStatus.textContent = 'Great! Keep tracing or tapping for 60 seconds.';
+                    playSound('success');
+                }, 1500);
+                setTimeout(() => {
+                    focusStatus.textContent = 'Nice work. Take a sip of water and restart if you feel ready.';
+                }, 4000);
+            });
+        }
+    }
+}
+
+function startVoiceGuide(message) {
+    speak(message);
+    playSound('click');
+}
+
+function initChatSupport() {
+    const chatLog = document.getElementById('deafChatLog');
+    const chatInput = document.getElementById('deafChatInput');
+    const chatSend = document.getElementById('deafChatSend');
+    if (!chatLog || !chatInput || !chatSend) return;
+
+    const appendMessage = (role, text, options = {}) => {
+        const row = document.createElement('div');
+        row.className = `chat-row ${role}`;
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble';
+        if (options.typing) {
+            bubble.dataset.typing = 'true';
+        }
+        const textEl = document.createElement('p');
+        textEl.textContent = text;
+        const stamp = document.createElement('span');
+        stamp.textContent = options.typing ? '···' : formatTimestamp();
+        bubble.append(textEl, stamp);
+        row.appendChild(bubble);
+        chatLog.appendChild(row);
+        chatLog.scrollTop = chatLog.scrollHeight;
+        return { bubble, textEl, stamp };
+    };
+
+    const updateMessage = (messageRef, nextText) => {
+        if (!messageRef) return;
+        messageRef.textEl.textContent = nextText;
+        messageRef.stamp.textContent = formatTimestamp();
+        messageRef.bubble.dataset.typing = 'false';
+    };
+
+    const showTyping = () => appendMessage('coach', 'Typing…', { typing: true });
+
+    appendMessage(
+        'coach',
+        'For quick assistance, reach us on WhatsApp at +91-9004436043. This chat mirrors that experience with BrightWords AI.'
+    );
+
+    const sendMessage = async () => {
+        const value = chatInput.value.trim();
+        if (!value) return;
+        appendMessage('user', value);
+        chatInput.value = '';
+        chatInput.focus();
+        const typingIndicator = showTyping();
+        chatSend.disabled = true;
+        try {
+            const reply = await fetchAiResponse(value);
+            updateMessage(typingIndicator, reply);
+        } finally {
+            chatSend.disabled = false;
+        }
+    };
+
+    chatSend.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
 }
 
 // Settings Event Listeners
