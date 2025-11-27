@@ -643,6 +643,153 @@ function startLearning() {
     playSound('click');
 }
 
+function openParentsCommunity(event) {
+    event.preventDefault();
+    
+    // WhatsApp Group Invite Link
+    const whatsappGroupLink = 'https://chat.whatsapp.com/BSkBimGGf4mLmXS7nmO6v5';
+    
+    // Show community information dialog
+    showParentsCommunityDialog(whatsappGroupLink);
+    playSound('click');
+}
+
+function showParentsCommunityDialog(whatsappLink) {
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'community-modal-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    // Create modal content
+    const modal = document.createElement('div');
+    modal.className = 'community-modal';
+    modal.style.cssText = `
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        animation: slideUp 0.3s ease;
+    `;
+    
+    modal.innerHTML = `
+        <h2 style="font-family: 'Fredoka', cursive; font-size: 28px; color: #1F2937; margin-bottom: 15px; text-align: center;">
+            👨‍👩‍👧‍👦 Parents & Community
+        </h2>
+        <p style="color: #6B7280; text-align: center; margin-bottom: 20px; line-height: 1.6;">
+            Join our WhatsApp community where parents and children with disabilities can connect, share experiences, and support each other!
+        </p>
+        <div style="background: #F3F4F6; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+            <h3 style="font-size: 18px; color: #1F2937; margin-bottom: 12px; font-weight: 600;">
+                🌟 Community Benefits:
+            </h3>
+            <ul style="color: #4B5563; line-height: 1.8; margin: 0; padding-left: 20px;">
+                <li>Connect with other parents facing similar challenges</li>
+                <li>Share learning tips and success stories</li>
+                <li>Get support and encouragement</li>
+                <li>Help children socialize in a safe environment</li>
+            </ul>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <button class="join-community-btn" data-link="${whatsappLink}" style="
+                background: linear-gradient(135deg, #25D366, #128C7E);
+                color: white;
+                border: none;
+                padding: 18px 24px;
+                border-radius: 16px;
+                font-size: 18px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            ">
+                💬 Join WhatsApp Community
+            </button>
+            <button class="close-community-modal" style="
+                background: #F3F4F6;
+                color: #1F2937;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 12px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+            ">
+                Maybe Later
+            </button>
+        </div>
+    `;
+    
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // Join button functionality
+    const joinBtn = modal.querySelector('.join-community-btn');
+    joinBtn.addEventListener('mouseenter', () => {
+        joinBtn.style.transform = 'translateY(-2px)';
+        joinBtn.style.boxShadow = '0 8px 20px rgba(37, 211, 102, 0.3)';
+    });
+    joinBtn.addEventListener('mouseleave', () => {
+        joinBtn.style.transform = 'translateY(0)';
+        joinBtn.style.boxShadow = 'none';
+    });
+    joinBtn.addEventListener('click', () => {
+        const link = joinBtn.getAttribute('data-link');
+        if (link && !link.includes('YOUR_GROUP_INVITE_CODE')) {
+            window.open(link, '_blank');
+            speak('Opening WhatsApp community');
+        } else {
+            alert('WhatsApp group link not configured. Please contact the administrator.');
+            speak('WhatsApp group link not available');
+        }
+        closeCommunityModal();
+        playSound('click');
+    });
+    
+    // Close button
+    modal.querySelector('.close-community-modal').addEventListener('click', closeCommunityModal);
+    
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeCommunityModal();
+        }
+    });
+    
+    // Close on Escape key
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            closeCommunityModal();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+    
+    function closeCommunityModal() {
+        overlay.style.animation = 'fadeOut 0.3s ease';
+        modal.style.animation = 'slideDown 0.3s ease';
+        setTimeout(() => {
+            if (document.body.contains(overlay)) {
+                document.body.removeChild(overlay);
+            }
+        }, 300);
+        playSound('click');
+    }
+}
+
 function watchDemo() {
     // YouTube video links for dyslexia and dysgraphia
     const dyslexiaVideoLink = 'https://youtu.be/65psPXWzNic?si=7xCTwNf0Fs_ymuDq';

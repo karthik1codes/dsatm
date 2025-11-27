@@ -440,3 +440,33 @@ body.accessibility-mode .chat-hint {
     color: #cbd5f5;
 }
 
+body.accessibility-mode .site-footer {
+    background: #131c34;
+    color: #f8fafc;
+    border-top-color: #f3f4f6;
+}
+
+body.accessibility-mode .site-footer p {
+    color: #f8fafc;
+}
+
+body.accessibility-mode .community-modal {
+    background: #111827 !important;
+    border: 2px solid #f3f4f6 !important;
+}
+
+body.accessibility-mode .community-modal h2,
+body.accessibility-mode .community-modal h3,
+body.accessibility-mode .community-modal p,
+body.accessibility-mode .community-modal li {
+    color: #f8fafc !important;
+}
+
+body.accessibility-mode .community-modal .close-community-modal {
+    background: #374151 !important;
+    color: #f8fafc !important;
+}
+
+body.accessibility-mode .community-modal .close-community-modal:hover {
+    background: #4b5563 !important;
+}
