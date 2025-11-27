@@ -14,6 +14,30 @@ const AUTH_STORAGE_KEY = 'brightwords_google_user';
 let currentUser = null;
 let hasWelcomedUser = false;
 
+// Daily Progress Tracking
+let dailyProgress = {
+    lessons: 0,
+    points: 0,
+    time: 0, // in minutes
+    date: new Date().toDateString()
+};
+
+// Learning Tips
+const learningTips = [
+    "Take breaks every 15-20 minutes to keep your mind fresh!",
+    "Practice a little bit every day - consistency beats intensity!",
+    "Read out loud to improve both reading and speaking skills!",
+    "Use the highlight feature to focus on difficult words!",
+    "Try different games to keep learning fun and engaging!",
+    "Set small goals and celebrate when you achieve them!",
+    "Review what you learned yesterday before starting new lessons!",
+    "Use the Read Aloud feature to hear proper pronunciation!",
+    "Don't worry about mistakes - they're part of learning!",
+    "Take your time and enjoy the learning journey!",
+    "Connect new words with pictures or stories to remember better!",
+    "Practice spelling by writing words in the air with your finger!"
+];
+
 const supportProfiles = {
     general: {
         message: 'General support mode active. Select another profile if needed.',
@@ -143,6 +167,9 @@ function openModule(moduleName) {
     learningArea.classList.add('active');
     playSound('click');
     speak(`Welcome to ${moduleNames[moduleName]}! Let's have fun learning!`);
+    
+    // Update daily progress
+    updateDailyProgress('lesson', 1);
 
     // Smooth scroll
     learningArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -317,12 +344,11 @@ function loadWritingGame() {
 function loadReadingGame() {
     const gameContainer = document.getElementById('gameContainer');
     gameContainer.innerHTML = `
-        <div style="padding: 20px;">
-            <h3 style="font-size: 28px; margin-bottom: 20px;">The Happy Sun</h3>
-            <div style="font-size: 20px; line-height: 2; background: white; padding: 20px; border-radius: 15px;">
-                <p id="readingText">
-                    The sun was very happy today. It smiled at all the children playing in the park.
-                    The birds were singing beautiful songs. Everyone had a wonderful day!
+        <div class="reading-game-wrapper">
+            <h3 class="story-title">The Magic Garden Adventure</h3>
+            <div class="story-container">
+                <p id="readingText" class="story-text">
+                    Once upon a time, in a small village, there lived a curious girl named Maya. Every morning, Maya would visit the magical garden behind her house. The garden was filled with colorful flowers that seemed to dance in the gentle breeze. One sunny day, Maya discovered a tiny door hidden beneath a large oak tree. Her heart filled with excitement as she opened the door and stepped into a world of wonder. Inside, she met friendly animals who could talk and trees that sang beautiful melodies. Maya learned that kindness and curiosity could unlock the most amazing adventures. She spent the day exploring, making new friends, and discovering that magic exists when you believe in yourself. As the sun set, Maya returned home with a heart full of joy and memories that would last forever.
                 </p>
             </div>
             <div class="control-panel">
@@ -445,9 +471,11 @@ function makeWordsClickable() {
     if (!text) return;
 
     const words = text.textContent.split(' ');
-    text.innerHTML = words.map(word =>
-        `<span style="cursor: pointer; padding: 2px;" onclick="speakWord('${word}')">${word}</span>`
-    ).join(' ');
+    text.innerHTML = words.map((word, index) => {
+        const cleanWord = word.replace(/[.,!?;:]/g, '');
+        const punctuation = word.replace(/[^.,!?;:]/g, '');
+        return `<span class="word-clickable" data-word="${cleanWord}" onclick="speakWord('${cleanWord}')">${cleanWord}</span>${punctuation}${index < words.length - 1 ? ' ' : ''}`;
+    }).join('');
 }
 
 function speakWord(word) {
@@ -462,20 +490,26 @@ function readAloud() {
 }
 
 function highlightWords() {
-    const spans = document.querySelectorAll('#readingText span');
+    const spans = document.querySelectorAll('#readingText .word-clickable');
     let delay = 0;
+    const wordDelay = 600; // Faster highlighting
 
     spans.forEach((span) => {
         setTimeout(() => {
             span.style.backgroundColor = '#FEF3C7';
-            speak(span.textContent, 0.7);
+            span.style.color = '#1F2937';
+            span.style.fontWeight = '600';
+            const word = span.getAttribute('data-word') || span.textContent;
+            speak(word, 0.7);
 
             setTimeout(() => {
                 span.style.backgroundColor = 'transparent';
-            }, 800);
+                span.style.color = '';
+                span.style.fontWeight = '';
+            }, 500);
         }, delay);
 
-        delay += 1000;
+        delay += wordDelay;
     });
 }
 
@@ -590,6 +624,9 @@ function saveStory() {
 function updateScore(points) {
     score += points;
     document.getElementById('totalPoints').textContent = score;
+    
+    // Update daily progress
+    updateDailyProgress('points', points);
 
     // Check for achievements
     if (score >= 500 && score - points < 500) {
@@ -640,6 +677,98 @@ function startLearning() {
     // Scroll to modules section
     document.querySelector('.modules-section').scrollIntoView({ behavior: 'smooth' });
     speak('Choose a module to start learning!');
+    playSound('click');
+}
+
+// Learning Tips Function
+function getRandomTip() {
+    const tipElement = document.getElementById('learningTip');
+    const tipBtn = document.getElementById('getTipBtn');
+    
+    if (!tipElement || !tipBtn) return;
+    
+    const randomTip = learningTips[Math.floor(Math.random() * learningTips.length)];
+    tipElement.textContent = randomTip;
+    tipBtn.textContent = '✨ New Tip';
+    
+    setTimeout(() => {
+        tipBtn.textContent = '💡 Get Learning Tip';
+    }, 2000);
+    
+    speak(randomTip);
+    playSound('click');
+}
+
+// Daily Progress Functions
+function updateDailyProgress(type, value) {
+    const today = new Date().toDateString();
+    
+    // Reset if it's a new day
+    if (dailyProgress.date !== today) {
+        dailyProgress = {
+            lessons: 0,
+            points: 0,
+            time: 0,
+            date: today
+        };
+    }
+    
+    if (type === 'lesson') {
+        dailyProgress.lessons += 1;
+    } else if (type === 'points') {
+        dailyProgress.points += value || 0;
+    } else if (type === 'time') {
+        dailyProgress.time += value || 0;
+    }
+    
+    saveDailyProgress();
+    updateDailyProgressUI();
+}
+
+function saveDailyProgress() {
+    localStorage.setItem('brightwords_daily_progress', JSON.stringify(dailyProgress));
+}
+
+function loadDailyProgress() {
+    const saved = localStorage.getItem('brightwords_daily_progress');
+    if (saved) {
+        const parsed = JSON.parse(saved);
+        const today = new Date().toDateString();
+        
+        if (parsed.date === today) {
+            dailyProgress = parsed;
+        } else {
+            dailyProgress = {
+                lessons: 0,
+                points: 0,
+                time: 0,
+                date: today
+            };
+        }
+    }
+    updateDailyProgressUI();
+}
+
+function updateDailyProgressUI() {
+    const lessonsEl = document.getElementById('todayLessons');
+    const pointsEl = document.getElementById('todayPoints');
+    const timeEl = document.getElementById('todayTime');
+    
+    if (lessonsEl) lessonsEl.textContent = dailyProgress.lessons;
+    if (pointsEl) pointsEl.textContent = dailyProgress.points;
+    if (timeEl) timeEl.textContent = dailyProgress.time + 'm';
+}
+
+function resetDailyProgress() {
+    dailyProgress = {
+        lessons: 0,
+        points: 0,
+        time: 0,
+        date: new Date().toDateString()
+    };
+    saveDailyProgress();
+    updateDailyProgressUI();
+    speak('Daily progress has been reset!');
     playSound('click');
 }
 
@@ -1079,8 +1208,41 @@ function renderSupportFeatures(category) {
     const templates = {
         general: `
             <div class="support-widget">
-                <h3>Adaptive Boosts</h3>
-                <p>Pick a profile above to unlock tailored helpers like voice guides, visual chats, and focus flows.</p>
+                <h3>📚 Learning Tips</h3>
+                <p id="learningTip">Click the button below to get a helpful learning tip!</p>
+                <button class="tip-btn" id="getTipBtn" onclick="getRandomTip()">💡 Get Learning Tip</button>
+            </div>
+            <div class="support-widget">
+                <h3>📊 Today's Progress</h3>
+                <div class="progress-stats">
+                    <div class="stat-mini">
+                        <span class="stat-mini-label">Lessons</span>
+                        <span class="stat-mini-value" id="todayLessons">0</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-mini-label">Points</span>
+                        <span class="stat-mini-value" id="todayPoints">0</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-mini-label">Time</span>
+                        <span class="stat-mini-value" id="todayTime">0m</span>
+                    </div>
+                </div>
+                <button class="tip-btn" onclick="resetDailyProgress()">🔄 Reset Daily Stats</button>
+            </div>
+            <div class="support-widget">
+                <h3>🎯 Quick Actions</h3>
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="startLearning()">
+                        🚀 Start Learning
+                    </button>
+                    <button class="action-btn" onclick="document.getElementById('progress').scrollIntoView({behavior: 'smooth'})">
+                        📈 View Progress
+                    </button>
+                    <button class="action-btn" onclick="toggleSettings()">
+                        ⚙️ Settings
+                    </button>
+                </div>
             </div>
         `,
         custom: `
@@ -1367,6 +1529,7 @@ window.addEventListener('load', () => {
     selectSupportCategory('general', true);
     initMotionCarousel();
     bootstrapAuth();
+    loadDailyProgress();
 
     // Animate stats on load
     const statValues = document.querySelectorAll('.stat-value');
