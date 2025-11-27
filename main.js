@@ -36,8 +36,10 @@ const supportProfiles = {
 // Initialize Speech Synthesis
 const synth = window.speechSynthesis;
 const supportFeaturePanel = document.getElementById('supportFeaturePanel');
-const HF_ENDPOINT = 'https://api-inference.huggingface.co/models/google/flan-t5-base';
-const DEFAULT_AI_KEY = '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';
+const OPENAI_CHAT_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+const OPENAI_MODEL = 'gpt-4o-mini';
+const OPENAI_STORAGE_KEY = 'brightwords_openai_key';
+const DEFAULT_AI_KEY = '';
 const FALLBACK_REPLIES = [
     'Try tracing the word while saying each letter in your head.',
     'Break the task into two tiny steps and celebrate in between.',
@@ -714,63 +716,46 @@ function formatTimestamp(date = new Date()) {
 }
 
 async function fetchAiResponse(prompt) {
-    const apiKey = localStorage.getItem('brightwords_ai_key') || DEFAULT_AI_KEY;
+    const apiKey = localStorage.getItem(OPENAI_STORAGE_KEY) || DEFAULT_AI_KEY;
     const fallback = FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)];
     if (!apiKey) {
-        return `To unlock the full AI assistant, add your Hugging Face key via localStorage.setItem('brightwords_ai_key','hf_xxx'). Meanwhile, here is a quick tip: ${fallback}`;
+        return `Connect ChatGPT by running localStorage.setItem('${OPENAI_STORAGE_KEY}','sk-xxx'). Until then, try this tip: ${fallback}`;
     }
-    const payload = {
-        inputs: `You are BrightWords Whisper Coach, a concise WhatsApp-style assistant who helps deaf and hard-of-hearing learners. Respond in one or two friendly sentences.\nUser: ${prompt}\nAssistant:`,
-        parameters: {
-            max_new_tokens: 120,
-            temperature: 0.4,
-            top_p: 0.9
-        }
-    };
-    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-    const requestAi = async (attempt = 0) => {
-        try {
-            const response = await fetch(HF_ENDPOINT, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${apiKey}`
-                },
-                body: JSON.stringify(payload)
-            });
-            let data = null;
-            try {
-                data = await response.json();
-            } catch (parseError) {
-                console.warn('Unable to parse AI response', parseError);
-            }
-            if (response.status === 503 && data?.estimated_time && attempt < 2) {
-                await wait((data.estimated_time + 0.5) * 1000);
-                return requestAi(attempt + 1);
-            }
-            if (!response.ok) {
-                throw new Error(data?.error || 'AI service is warming up. Please try again.');
-            }
-            const rawText = Array.isArray(data) ? data[0]?.generated_text : data?.generated_text;
-            if (!rawText) {
-                throw new Error('No reply received yet. Please ask again.');
-            }
-            const cleaned = rawText.split('Assistant:').pop().trim();
-            return cleaned || fallback;
-        } catch (error) {
-            if (attempt < 1) {
-                await wait(1200);
-                return requestAi(attempt + 1);
-            }
-            throw error;
-        }
-    };
 
     try {
-        return await requestAi();
+        const response = await fetch(OPENAI_CHAT_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: OPENAI_MODEL,
+                temperature: 0.4,
+                max_tokens: 200,
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are BrightWords Whisper Coach, a concise ChatGPT guide for deaf and hard-of-hearing learners. Reply with short, friendly sentences and practical tips.'
+                    },
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ]
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data?.error?.message || 'ChatGPT is warming up. Please try again.');
+        }
+
+        const reply = data?.choices?.[0]?.message?.content?.trim();
+        return reply || fallback;
     } catch (error) {
         console.error('AI error', error);
-        return `I'm having trouble reaching the AI right now. ${fallback}`;
+        return `I'm having trouble reaching ChatGPT right now. ${fallback}`;
     }
 }
 
@@ -798,7 +783,8 @@ function renderSupportFeatures(category) {
         `,
         deaf: `
             <div class="support-widget" aria-label="Visual helper chat">
-                <h3>Silent Support Chat</h3>
+                <h3>ChatGPT Visual Coach</h3>
+                <p class="chat-intro">Type a question and get instant text replies tuned for deaf and hard-of-hearing learners.</p>
                 <div class="chat-log" id="deafChatLog" aria-live="polite"></div>
                 <div class="chat-input">
                     <label for="deafChatInput">Ask a quick question</label>
@@ -806,7 +792,7 @@ function renderSupportFeatures(category) {
                         <input type="text" id="deafChatInput" placeholder="Type your message..." aria-label="Chat message">
                         <button class="chat-send" id="deafChatSend">Send</button>
                     </div>
-                <p class="chat-hint">Powered by BrightWords AI (Hugging Face). Add <code>localStorage.setItem('brightwords_ai_key','hf_xxx')</code> to use your own key.</p>
+                <p class="chat-hint">Powered by ChatGPT. Add <code>localStorage.setItem('${OPENAI_STORAGE_KEY}','sk-xxx')</code> to connect your key.</p>
                 </div>
             </div>
         `,
@@ -896,11 +882,6 @@ function initChatSupport() {
     };
 
     const showTyping = () => appendMessage('coach', 'Typing…', { typing: true });
-
-    appendMessage(
-        'coach',
-        'For quick assistance, reach us on WhatsApp at +91-9004436043. This chat mirrors that experience with BrightWords AI.'
-    );
 
     const sendMessage = async () => {
         const value = chatInput.value.trim();

@@ -375,19 +375,78 @@ body {
     }
 }
 
-.hero-character {
-    width: 100%;
-    max-width: 400px;
-    height: 400px;
-    background: linear-gradient(135deg, var(--light-purple), var(--light-pink));
-    border-radius: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 200px;
-    animation: float 3s infinite ease-in-out;
-    box-shadow: var(--shadow-xl);
+.motion-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
 }
+
+.motion-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(237,233,254,0.9));
+    border-radius: 24px;
+    padding: 18px;
+    box-shadow: 0 20px 45px rgba(139,92,246,0.15);
+    position: relative;
+    overflow: hidden;
+    animation: cardFloat 6s ease-in-out infinite;
+}
+
+.motion-card:nth-child(2) {
+    animation-delay: 0.8s;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(219,234,254,0.9));
+}
+
+.motion-card:nth-child(3) {
+    animation-delay: 1.4s;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(253,242,248,0.95));
+}
+
+@keyframes cardFloat {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-6px) scale(1.01); }
+}
+
+.motion-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, rgba(236,72,153,0.15), transparent 55%);
+    pointer-events: none;
+}
+
+.motion-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: var(--primary-purple);
+    background: rgba(255,255,255,0.7);
+    border-radius: 999px;
+    padding: 6px 14px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 12px;
+    backdrop-filter: blur(4px);
+}
+
+.motion-card figcaption {
+    margin-top: 12px;
+}
+
+.motion-card figcaption h4 {
+    font-size: 15px;
+    color: #374151;
+    line-height: 1.4;
+    font-weight: 700;
+}
+
+.motion-image {
+    width: 100%;
+    height: 180px;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 12px 25px rgba(15,23,42,0.15));
+}
+
 
 .accessibility-section {
     background: rgba(255, 255, 255, 0.95);
