@@ -37,6 +37,7 @@ const supportProfiles = {
 const synth = window.speechSynthesis;
 const supportFeaturePanel = document.getElementById('supportFeaturePanel');
 const HF_ENDPOINT = 'https://api-inference.huggingface.co/models/google/flan-t5-base';
+const DEFAULT_AI_KEY = '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';
 const FALLBACK_REPLIES = [
     'Try tracing the word while saying each letter in your head.',
     'Break the task into two tiny steps and celebrate in between.',
@@ -713,7 +714,7 @@ function formatTimestamp(date = new Date()) {
 }
 
 async function fetchAiResponse(prompt) {
-    const apiKey = localStorage.getItem('brightwords_ai_key');
+    const apiKey = localStorage.getItem('brightwords_ai_key') || DEFAULT_AI_KEY;
     const fallback = FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)];
     if (!apiKey) {
         return `To unlock the full AI assistant, add your Hugging Face key via localStorage.setItem('brightwords_ai_key','hf_xxx'). Meanwhile, here is a quick tip: ${fallback}`;
@@ -726,26 +727,49 @@ async function fetchAiResponse(prompt) {
             top_p: 0.9
         }
     };
+    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    const requestAi = async (attempt = 0) => {
+        try {
+            const response = await fetch(HF_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(payload)
+            });
+            let data = null;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                console.warn('Unable to parse AI response', parseError);
+            }
+            if (response.status === 503 && data?.estimated_time && attempt < 2) {
+                await wait((data.estimated_time + 0.5) * 1000);
+                return requestAi(attempt + 1);
+            }
+            if (!response.ok) {
+                throw new Error(data?.error || 'AI service is warming up. Please try again.');
+            }
+            const rawText = Array.isArray(data) ? data[0]?.generated_text : data?.generated_text;
+            if (!rawText) {
+                throw new Error('No reply received yet. Please ask again.');
+            }
+            const cleaned = rawText.split('Assistant:').pop().trim();
+            return cleaned || fallback;
+        } catch (error) {
+            if (attempt < 1) {
+                await wait(1200);
+                return requestAi(attempt + 1);
+            }
+            throw error;
+        }
+    };
+
     try {
-        const response = await fetch(HF_ENDPOINT, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${apiKey}`
-            },
-            body: JSON.stringify(payload)
-        });
-        if (!response.ok) {
-            throw new Error('AI service is warming up. Please try again.');
-        }
-        const data = await response.json();
-        const text = Array.isArray(data) ? data[0]?.generated_text : data?.generated_text;
-        if (!text) {
-            throw new Error('No reply received yet. Please ask again.');
-        }
-        return text.replace(/assistant[:\-]?\s*/i, '').trim();
+        return await requestAi();
     } catch (error) {
-        console.error(error);
+        console.error('AI error', error);
         return `I'm having trouble reaching the AI right now. ${fallback}`;
     }
 }
@@ -782,7 +806,7 @@ function renderSupportFeatures(category) {
                         <input type="text" id="deafChatInput" placeholder="Type your message..." aria-label="Chat message">
                         <button class="chat-send" id="deafChatSend">Send</button>
                     </div>
-                <p class="chat-hint">Tip: Add your Hugging Face API key via <code>localStorage.setItem('brightwords_ai_key','hf_xxx')</code> to enable full AI answers.</p>
+                <p class="chat-hint">Powered by BrightWords AI (Hugging Face). Add <code>localStorage.setItem('brightwords_ai_key','hf_xxx')</code> to use your own key.</p>
                 </div>
             </div>
         `,
