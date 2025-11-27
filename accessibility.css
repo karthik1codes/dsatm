@@ -75,6 +75,58 @@ body.accessibility-mode .settings-panel {
     color: #f8fafc;
 }
 
+body.accessibility-mode .settings-title,
+body.accessibility-mode .setting-label,
+body.accessibility-mode .setting-label span {
+    color: #f8fafc;
+}
+
+body.accessibility-mode .user-profile-card {
+    background: #1f2937;
+    border-color: #f3f4f6;
+}
+
+body.accessibility-mode .user-profile-name,
+body.accessibility-mode .user-profile-email {
+    color: #f8fafc;
+}
+
+body.accessibility-mode .settings-panel select,
+body.accessibility-mode .settings-panel option {
+    background: #1f2937;
+    color: #f8fafc;
+    border-color: #f3f4f6;
+}
+
+body.accessibility-mode .close-btn {
+    background: #374151;
+    color: #f8fafc;
+}
+
+body.accessibility-mode .close-btn:hover {
+    background: #4b5563;
+    color: #f8fafc;
+}
+
+body.accessibility-mode .video-selection-modal {
+    background: #111827 !important;
+    border: 2px solid #f3f4f6 !important;
+}
+
+body.accessibility-mode .video-selection-modal h2,
+body.accessibility-mode .video-selection-modal p {
+    color: #f8fafc !important;
+}
+
+body.accessibility-mode .video-selection-modal .close-video-modal {
+    background: #374151 !important;
+    color: #f8fafc !important;
+}
+
+body.accessibility-mode .video-selection-modal .close-video-modal:hover {
+    background: #4b5563 !important;
+}
+
 body.accessibility-mode .nav-header {
     display: flex;
     justify-content: space-between;

@@ -643,6 +643,170 @@ function startLearning() {
     playSound('click');
 }
 
+function watchDemo() {
+    // YouTube video links for dyslexia and dysgraphia
+    const dyslexiaVideoLink = 'https://youtu.be/65psPXWzNic?si=7xCTwNf0Fs_ymuDq';
+    const dysgraphiaVideoLink = 'https://youtu.be/WMfl5kqSWmk?si=HogwyawIdvY62P1i';
+    
+    // Show selection dialog
+    showVideoSelectionDialog(dyslexiaVideoLink, dysgraphiaVideoLink);
+    playSound('click');
+}
+
+function showVideoSelectionDialog(dyslexiaLink, dysgraphiaLink) {
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'video-selection-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    // Create modal content
+    const modal = document.createElement('div');
+    modal.className = 'video-selection-modal';
+    modal.style.cssText = `
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        animation: slideUp 0.3s ease;
+    `;
+    
+    modal.innerHTML = `
+        <h2 style="font-family: 'Fredoka', cursive; font-size: 28px; color: #1F2937; margin-bottom: 10px; text-align: center;">
+            Choose a Demo Video
+        </h2>
+        <p style="color: #6B7280; text-align: center; margin-bottom: 30px;">
+            Select which video you'd like to watch
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <button class="video-option-btn" data-link="${dyslexiaLink}" style="
+                background: linear-gradient(135deg, #8B5CF6, #EC4899);
+                color: white;
+                border: none;
+                padding: 18px 24px;
+                border-radius: 16px;
+                font-size: 18px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+                text-align: left;
+            ">
+                📚 Dyslexia Demo Video
+            </button>
+            <button class="video-option-btn" data-link="${dysgraphiaLink}" style="
+                background: linear-gradient(135deg, #3B82F6, #10B981);
+                color: white;
+                border: none;
+                padding: 18px 24px;
+                border-radius: 16px;
+                font-size: 18px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+                text-align: left;
+            ">
+                ✏️ Dysgraphia Demo Video
+            </button>
+            <button class="close-video-modal" style="
+                background: #F3F4F6;
+                color: #1F2937;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 12px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                margin-top: 10px;
+            ">
+                Cancel
+            </button>
+        </div>
+    `;
+    
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // Add hover effects
+    const buttons = modal.querySelectorAll('.video-option-btn');
+    buttons.forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+            btn.style.transform = 'translateY(-2px)';
+            btn.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.transform = 'translateY(0)';
+            btn.style.boxShadow = 'none';
+        });
+        btn.addEventListener('click', () => {
+            const link = btn.getAttribute('data-link');
+            window.open(link, '_blank');
+            closeVideoModal();
+            speak('Opening demo video');
+            playSound('click');
+        });
+    });
+    
+    // Close button
+    modal.querySelector('.close-video-modal').addEventListener('click', closeVideoModal);
+    
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeVideoModal();
+        }
+    });
+    
+    // Close on Escape key
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            closeVideoModal();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+    
+    function closeVideoModal() {
+        overlay.style.animation = 'fadeOut 0.3s ease';
+        modal.style.animation = 'slideDown 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(overlay);
+        }, 300);
+        playSound('click');
+    }
+    
+    // Add animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes slideDown {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(30px); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 // Confetti Effect
 function createConfetti() {
     for (let i = 0; i < 30; i++) {
