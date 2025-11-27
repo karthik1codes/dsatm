@@ -908,6 +908,108 @@ function initChatSupport() {
     });
 }
 
+function initMotionCarousel() {
+    const gallery = document.getElementById('motionGallery');
+    const dotsWrapper = document.getElementById('motionDots');
+    if (!gallery || !dotsWrapper) return;
+
+    const cards = Array.from(gallery.querySelectorAll('.motion-card'));
+    if (cards.length <= 1) {
+        dotsWrapper.style.display = 'none';
+        return;
+    }
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let currentSlide = 0;
+    let slideWidth = 0;
+    let autoTimer = null;
+
+    const getGapValue = () => {
+        const styles = window.getComputedStyle(gallery);
+        const gap = parseFloat(styles.columnGap || styles.gap || '0');
+        return Number.isNaN(gap) ? 0 : gap;
+    };
+
+    const recalcSlideWidth = () => {
+        const cardWidth = cards[0]?.offsetWidth || 0;
+        slideWidth = cardWidth + getGapValue();
+    };
+
+    const updateDots = () => {
+        dotsWrapper.querySelectorAll('.motion-dot').forEach((dot, idx) => {
+            const isActive = idx === currentSlide;
+            dot.classList.toggle('active', isActive);
+            dot.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            dot.tabIndex = isActive ? 0 : -1;
+        });
+    };
+
+    const goToSlide = (index, { immediate = false } = {}) => {
+        currentSlide = (index + cards.length) % cards.length;
+        recalcSlideWidth();
+        if (immediate) {
+            gallery.style.transition = 'none';
+        }
+        gallery.style.transform = `translateX(-${slideWidth * currentSlide}px)`;
+        if (immediate) {
+            requestAnimationFrame(() => {
+                gallery.style.transition = '';
+            });
+        }
+        updateDots();
+    };
+
+    const stopAuto = () => {
+        if (autoTimer) {
+            clearInterval(autoTimer);
+            autoTimer = null;
+        }
+    };
+
+    const startAuto = () => {
+        if (prefersReducedMotion) return;
+        stopAuto();
+        autoTimer = setInterval(() => {
+            goToSlide(currentSlide + 1);
+        }, 5000);
+    };
+
+    dotsWrapper.innerHTML = '';
+    cards.forEach((_, index) => {
+        const dot = document.createElement('button');
+        dot.className = 'motion-dot';
+        dot.type = 'button';
+        dot.setAttribute('role', 'tab');
+        dot.setAttribute('aria-label', `Show accessibility spotlight ${index + 1}`);
+        dot.addEventListener('click', () => {
+            goToSlide(index);
+            startAuto();
+        });
+        dotsWrapper.appendChild(dot);
+    });
+
+    goToSlide(0, { immediate: true });
+    startAuto();
+
+    const pauseOnInteraction = () => stopAuto();
+    const resumeAuto = () => startAuto();
+
+    gallery.addEventListener('mouseenter', pauseOnInteraction);
+    gallery.addEventListener('mouseleave', resumeAuto);
+    gallery.addEventListener('focusin', pauseOnInteraction);
+    gallery.addEventListener('focusout', resumeAuto);
+    dotsWrapper.addEventListener('focusin', pauseOnInteraction);
+    dotsWrapper.addEventListener('focusout', resumeAuto);
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            goToSlide(currentSlide, { immediate: true });
+        }, 200);
+    });
+}
+
 // Settings Event Listeners
 document.getElementById('ttsToggle').onclick = function() {
     this.classList.toggle('active');
@@ -953,6 +1055,7 @@ window.addEventListener('load', () => {
 
     syncSettingsUI();
     selectSupportCategory('general', true);
+    initMotionCarousel();
 
     // Animate stats on load
     const statValues = document.querySelectorAll('.stat-value');

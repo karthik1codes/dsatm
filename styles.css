@@ -375,10 +375,18 @@ body {
     }
 }
 
+.motion-carousel {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    padding-bottom: 36px;
+}
+
 .motion-gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 20px;
+    display: flex;
+    gap: 24px;
+    transition: transform 0.6s ease;
+    will-change: transform;
 }
 
 .motion-card {
@@ -389,6 +397,23 @@ body {
     position: relative;
     overflow: hidden;
     animation: cardFloat 6s ease-in-out infinite;
+    flex: 0 0 100%;
+    min-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+    .motion-card {
+        flex-basis: 90%;
+        min-width: 90%;
+    }
+}
+
+@media (min-width: 1100px) {
+    .motion-card {
+        flex-basis: 75%;
+        min-width: 75%;
+    }
 }
 
 .motion-card:nth-child(2) {
@@ -445,6 +470,38 @@ body {
     object-fit: contain;
     display: block;
     filter: drop-shadow(0 12px 25px rgba(15,23,42,0.15));
+}
+
+.motion-dots {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+}
+
+.motion-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(107, 114, 128, 0.45);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+.motion-dot:focus-visible {
+    outline: 2px solid var(--primary-purple);
+    outline-offset: 4px;
+}
+
+.motion-dot.active {
+    width: 30px;
+    background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
 }
 
 

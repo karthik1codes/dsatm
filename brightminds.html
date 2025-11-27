@@ -91,7 +91,8 @@
             </div>
             
             <div class="hero-visual" aria-label="Animated accessibility spotlights">
-                <div class="motion-gallery">
+                <div class="motion-carousel" role="region" aria-label="Accessibility spotlights" aria-live="polite">
+                    <div class="motion-gallery" id="motionGallery">
                     <figure class="motion-card">
                         <div class="motion-badge">Dyslexia Boost</div>
                         <img src="assets/dyslexia.svg" alt="Animated dyslexia-friendly book" class="motion-image">
@@ -104,6 +105,13 @@
                         <img src="assets/hearing.svg" alt="Animated ear with visual sound waves" class="motion-image">
                         <figcaption>
                             <h4>Animated visual cues pulse whenever ChatGPT replies so silent learners never miss guidance.</h4>
+                        </figcaption>
+                    </figure>
+                    <figure class="motion-card">
+                        <div class="motion-badge">Blind Explorer</div>
+                        <img src="assets/vision-panel.svg" alt="Child with visual impairment learning on a tablet" class="motion-image">
+                        <figcaption>
+                            <h4>Audio labels, tactile-friendly keyboards, and high-contrast lessons guide low-vision learners screen by screen.</h4>
                         </figcaption>
                     </figure>
                     <figure class="motion-card">
@@ -120,6 +128,8 @@
                             <h4>Soothing puzzle pulses model routines, breathing, and predictable patterns to reduce overwhelm.</h4>
                         </figcaption>
                     </figure>
+                    </div>
+                    <div class="motion-dots" id="motionDots" role="tablist" aria-label="Select accessibility spotlight"></div>
                 </div>
             </div>
         </section>
