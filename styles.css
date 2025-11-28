@@ -4,6 +4,10 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 :root {
     --primary-purple: #8B5CF6;
     --primary-pink: #EC4899;
@@ -208,6 +212,34 @@ body.authenticated .auth-overlay {
 
 /* Site Footer */
 /* Feedback Section */
+.sign-language-section {
+    padding: 60px 20px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(237, 233, 254, 0.3));
+    margin-top: 40px;
+    min-height: 600px;
+}
+
+.sign-language-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.sign-language-placeholder {
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .feedback-section {
     padding: 60px 20px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(237, 233, 254, 0.3));

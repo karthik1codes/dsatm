@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <linearGradient id="puzzleGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="puzzleGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10B981;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="puzzleGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FB923C;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Puzzle piece 1 -->
+  <path d="M 100 100 L 140 100 L 140 80 L 160 80 L 160 100 L 200 100 L 200 140 L 180 140 L 180 160 L 160 160 L 160 140 L 120 140 L 120 160 L 100 160 Z" 
+        fill="url(#puzzleGradient1)" opacity="0.9">
+    <animate attributeName="opacity" values="0.9;1;0.9" dur="3s" repeatCount="indefinite"/>
+  </path>
+  <path d="M 100 100 L 140 100 L 140 80 L 160 80 L 160 100 L 200 100 L 200 140 L 180 140 L 180 160 L 160 160 L 160 140 L 120 140 L 120 160 L 100 160 Z" 
+        fill="none" stroke="#fff" stroke-width="2"/>
+  
+  <!-- Puzzle piece 2 -->
+  <path d="M 220 100 L 260 100 L 260 80 L 280 80 L 280 100 L 300 100 L 300 140 L 280 140 L 280 160 L 260 160 L 260 140 L 240 140 L 240 160 L 220 160 Z" 
+        fill="url(#puzzleGradient2)" opacity="0.9">
+    <animate attributeName="opacity" values="0.9;1;0.9" dur="3s" begin="0.5s" repeatCount="indefinite"/>
+  </path>
+  <path d="M 220 100 L 260 100 L 260 80 L 280 80 L 280 100 L 300 100 L 300 140 L 280 140 L 280 160 L 260 160 L 260 140 L 240 140 L 240 160 L 220 160 Z" 
+        fill="none" stroke="#fff" stroke-width="2"/>
+  
+  <!-- Puzzle piece 3 -->
+  <path d="M 120 180 L 160 180 L 160 200 L 180 200 L 180 220 L 160 220 L 160 240 L 140 240 L 140 220 L 120 220 L 120 200 L 100 200 L 100 180 Z" 
+        fill="url(#puzzleGradient3)" opacity="0.9">
+    <animate attributeName="opacity" values="0.9;1;0.9" dur="3s" begin="1s" repeatCount="indefinite"/>
+  </path>
+  <path d="M 120 180 L 160 180 L 160 200 L 180 200 L 180 220 L 160 220 L 160 240 L 140 240 L 140 220 L 120 220 L 120 200 L 100 200 L 100 180 Z" 
+        fill="none" stroke="#fff" stroke-width="2"/>
+  
+  <!-- Puzzle piece 4 -->
+  <path d="M 240 180 L 280 180 L 280 200 L 300 200 L 300 220 L 280 220 L 280 240 L 260 240 L 260 220 L 240 220 L 240 200 L 220 200 L 220 180 Z" 
+        fill="url(#puzzleGradient1)" opacity="0.9">
+    <animate attributeName="opacity" values="0.9;1;0.9" dur="3s" begin="1.5s" repeatCount="indefinite"/>
+  </path>
+  <path d="M 240 180 L 280 180 L 280 200 L 300 200 L 300 220 L 280 220 L 280 240 L 260 240 L 260 220 L 240 220 L 240 200 L 220 200 L 220 180 Z" 
+        fill="none" stroke="#fff" stroke-width="2"/>
+  
+  <!-- Breathing pattern indicator -->
+  <circle cx="200" cy="150" r="40" fill="none" stroke="#10B981" stroke-width="3" opacity="0.4">
+    <animate attributeName="r" values="40;50;40" dur="4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.4;0.6;0.4" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="200" cy="150" r="30" fill="none" stroke="#3B82F6" stroke-width="3" opacity="0.5">
+    <animate attributeName="r" values="30;35;30" dur="4s" begin="1s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.5;0.7;0.5" dur="4s" begin="1s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Predictable pattern lines -->
+  <line x1="80" y1="120" x2="320" y2="120" stroke="#DBEAFE" stroke-width="2" stroke-dasharray="5,5" opacity="0.5">
+    <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2s" repeatCount="indefinite"/>
+  </line>
+  <line x1="80" y1="200" x2="320" y2="200" stroke="#DBEAFE" stroke-width="2" stroke-dasharray="5,5" opacity="0.5">
+    <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2s" begin="1s" repeatCount="indefinite"/>
+  </line>
+  
+  <!-- Calming elements -->
+  <circle cx="60" cy="80" r="15" fill="#FCE7F3" opacity="0.6">
+    <animate attributeName="r" values="15;18;15" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="340" cy="220" r="18" fill="#D1FAE5" opacity="0.6">
+    <animate attributeName="r" values="18;22;18" dur="3s" begin="1.5s" repeatCount="indefinite"/>
+  </circle>
+</svg>
+

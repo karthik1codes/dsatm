@@ -72,8 +72,30 @@
                                 setupAuthElements();
                             }
                         } else if (isLoginPage) {
-                            // Not in iframe and on login page - redirect to /home
-                            window.location.href = '/home';
+                            // Not in iframe and on login page - just unlock, stay on page
+                            // The page already has the home section visible
+                            const body = document.body;
+                            if (body) {
+                                body.classList.remove('auth-locked');
+                                body.classList.add('authenticated');
+                            }
+                            
+                            function setupAuthElements() {
+                                const overlay = document.getElementById('authOverlay');
+                                const app = document.getElementById('appContent');
+                                if (overlay) {
+                                    overlay.setAttribute('aria-hidden', 'true');
+                                }
+                                if (app) {
+                                    app.removeAttribute('aria-hidden');
+                                }
+                            }
+                            
+                            if (document.readyState === 'loading') {
+                                document.addEventListener('DOMContentLoaded', setupAuthElements);
+                            } else {
+                                setupAuthElements();
+                            }
                             return;
                         } else {
                             // Not on login page - unlock normally
@@ -143,6 +165,7 @@
                     <a href="#home" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Home</a>
                     <a href="#support" class="nav-item" role="menuitem" aria-describedby="keyboardHint" onclick="event.preventDefault(); startLearning();">Learn</a>
                     <a href="#progress" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Progress</a>
+                    <a href="sign-language.html" class="nav-item" role="menuitem" aria-describedby="keyboardHint" title="Sign Language Learning">🤟 Sign Language</a>
                     <a href="#parents" class="nav-item" role="menuitem" aria-describedby="keyboardHint" onclick="openParentsCommunity(event)">Parents</a>
                     <a href="#feedback" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Feedback</a>
                     <a href="/aws-augmentability-main/index.html" class="nav-item superpower-link-bypass" role="menuitem" aria-describedby="keyboardHint" title="SuperPower - AWS AugmentAbility features" id="superpower-link">⚡ SuperPower</a>
@@ -330,220 +353,6 @@
                 <div class="stat-label">Time Today</div>
             </div>
         </div>
-
-        <!-- Learning Modules Section -->
-        <section class="modules-section" id="learn">
-            <div class="section-header">
-                <h2 class="section-title">Choose Your Adventure</h2>
-                <p class="section-subtitle">Pick a module and start your learning journey!</p>
-            </div>
-
-            <div class="modules-grid">
-                <!-- Phonics Module -->
-                <div class="module-card"
-                     onclick="openModule('phonics')"
-                     role="button"
-                     tabindex="0"
-                     aria-label="Open Phonics Fun module"
-                     onkeypress="if(event.key==='Enter' || event.key===' '){openModule('phonics'); event.preventDefault();}">
-                    <div class="module-header">
-                        <div class="module-icon-wrapper module-icon-purple">
-                            <span>🔤</span>
-                        </div>
-                        <div class="module-info">
-                            <h3 class="module-title">Phonics Fun</h3>
-                            <span class="module-level">Level 1</span>
-                        </div>
-                    </div>
-                    <p class="module-description">
-                        Master letter sounds with interactive games and AI-powered pronunciation feedback!
-                    </p>
-                    <div class="module-progress">
-                        <div class="progress-label">
-                            <span>Progress</span>
-                            <span>65%</span>
-                        </div>
-                        <div class="progress-bar-wrapper">
-                            <div class="progress-bar-fill" style="width: 65%"></div>
-                        </div>
-                    </div>
-                    <div class="module-footer">
-                        <div class="module-points">⭐ 50 points</div>
-                        <button class="play-btn">Play Now →</button>
-                    </div>
-                </div>
-
-                <!-- Spelling Module -->
-                <div class="module-card"
-                     onclick="openModule('spelling')"
-                     role="button"
-                     tabindex="0"
-                     aria-label="Open Spelling Wizard module"
-                     onkeypress="if(event.key==='Enter' || event.key===' '){openModule('spelling'); event.preventDefault();}">
-                    <div class="module-header">
-                        <div class="module-icon-wrapper module-icon-pink">
-                            <span>✏️</span>
-                        </div>
-                        <div class="module-info">
-                            <h3 class="module-title">Spelling Wizard</h3>
-                            <span class="module-level">Level 2</span>
-                        </div>
-                    </div>
-                    <p class="module-description">
-                        Conquer spelling challenges with visual hints and adaptive difficulty!
-                    </p>
-                    <div class="module-progress">
-                        <div class="progress-label">
-                            <span>Progress</span>
-                            <span>45%</span>
-                        </div>
-                        <div class="progress-bar-wrapper">
-                            <div class="progress-bar-fill" style="width: 45%"></div>
-                        </div>
-                    </div>
-                    <div class="module-footer">
-                        <div class="module-points">⭐ 75 points</div>
-                        <button class="play-btn">Play Now →</button>
-                    </div>
-                </div>
-
-                <!-- Writing Module -->
-                <div class="module-card"
-                     onclick="openModule('writing')"
-                     role="button"
-                     tabindex="0"
-                     aria-label="Open Writing Artist module"
-                     onkeypress="if(event.key==='Enter' || event.key===' '){openModule('writing'); event.preventDefault();}">
-                    <div class="module-header">
-                        <div class="module-icon-wrapper module-icon-blue">
-                            <span>🎨</span>
-                        </div>
-                        <div class="module-info">
-                            <h3 class="module-title">Writing Artist</h3>
-                            <span class="module-level">Level 1</span>
-                        </div>
-                    </div>
-                    <p class="module-description">
-                        Practice letter formation with guided tracing and creative drawing tools!
-                    </p>
-                    <div class="module-progress">
-                        <div class="progress-label">
-                            <span>Progress</span>
-                            <span>30%</span>
-                        </div>
-                        <div class="progress-bar-wrapper">
-                            <div class="progress-bar-fill" style="width: 30%"></div>
-                        </div>
-                    </div>
-                    <div class="module-footer">
-                        <div class="module-points">⭐ 60 points</div>
-                        <button class="play-btn">Play Now →</button>
-                    </div>
-                </div>
-
-                <!-- Reading Module -->
-                <div class="module-card"
-                     onclick="openModule('reading')"
-                     role="button"
-                     tabindex="0"
-                     aria-label="Open Story Explorer module"
-                     onkeypress="if(event.key==='Enter' || event.key===' '){openModule('reading'); event.preventDefault();}">
-                    <div class="module-header">
-                        <div class="module-icon-wrapper module-icon-green">
-                            <span>📖</span>
-                        </div>
-                        <div class="module-info">
-                            <h3 class="module-title">Story Explorer</h3>
-                            <span class="module-level">Level 2</span>
-                        </div>
-                    </div>
-                    <p class="module-description">
-                        Discover amazing stories with word highlighting and voice assistance!
-                    </p>
-                    <div class="module-progress">
-                        <div class="progress-label">
-                            <span>Progress</span>
-                            <span>80%</span>
-                        </div>
-                        <div class="progress-bar-wrapper">
-                            <div class="progress-bar-fill" style="width: 80%"></div>
-                        </div>
-                    </div>
-                    <div class="module-footer">
-                        <div class="module-points">⭐ 100 points</div>
-                        <button class="play-btn">Play Now →</button>
-                    </div>
-                </div>
-
-                <!-- Memory Module -->
-                <div class="module-card"
-                     onclick="openModule('memory')"
-                     role="button"
-                     tabindex="0"
-                     aria-label="Open Memory Master module"
-                     onkeypress="if(event.key==='Enter' || event.key===' '){openModule('memory'); event.preventDefault();}">
-                    <div class="module-header">
-                        <div class="module-icon-wrapper module-icon-yellow">
-                            <span>🧠</span>
-                        </div>
-                        <div class="module-info">
-                            <h3 class="module-title">Memory Master</h3>
-                            <span class="module-level">Level 3</span>
-                        </div>
-                    </div>
-                    <p class="module-description">
-                        Boost your memory with fun sequence games and pattern challenges!
-                    </p>
-                    <div class="module-progress">
-                        <div class="progress-label">
-                            <span>Progress</span>
-                            <span>55%</span>
-                        </div>
-                        <div class="progress-bar-wrapper">
-                            <div class="progress-bar-fill" style="width: 55%"></div>
-                        </div>
-                    </div>
-                    <div class="module-footer">
-                        <div class="module-points">⭐ 80 points</div>
-                        <button class="play-btn">Play Now →</button>
-                    </div>
-                </div>
-
-                <!-- Story Builder Module -->
-                <div class="module-card"
-                     onclick="openModule('stories')"
-                     role="button"
-                     tabindex="0"
-                     aria-label="Open Story Creator module"
-                     onkeypress="if(event.key==='Enter' || event.key===' '){openModule('stories'); event.preventDefault();}">
-                    <div class="module-header">
-                        <div class="module-icon-wrapper module-icon-orange">
-                            <span>🚀</span>
-                        </div>
-                        <div class="module-info">
-                            <h3 class="module-title">Story Creator</h3>
-                            <span class="module-level">Level 2</span>
-                        </div>
-                    </div>
-                    <p class="module-description">
-                        Create your own adventures with AI-powered story suggestions!
-                    </p>
-                    <div class="module-progress">
-                        <div class="progress-label">
-                            <span>Progress</span>
-                            <span>20%</span>
-                        </div>
-                        <div class="progress-bar-wrapper">
-                            <div class="progress-bar-fill" style="width: 20%"></div>
-                        </div>
-                    </div>
-                    <div class="module-footer">
-                        <div class="module-points">⭐ 90 points</div>
-                        <button class="play-btn">Play Now →</button>
-                    </div>
-                </div>
-            </div>
-        </section>
 
         <!-- Interactive Learning Area -->
         <div class="learning-area" id="learningArea" role="region" aria-live="polite">

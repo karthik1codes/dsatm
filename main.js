@@ -103,7 +103,7 @@ const HUGGINGFACE_API_ENDPOINT = 'https://api-inference.huggingface.co/models';
 // Google Gemini API (Free tier) - Primary API
 const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 const GEMINI_CHAT_MODEL = 'gemini-pro';
-const GEMINI_VISION_MODEL = 'gemini-pro-vision';
+const GEMINI_VISION_MODEL = 'gemini-1.5-flash'; // Fast and reliable vision model
 const API_STORAGE_KEY = 'brightwords_api_key'; // For Gemini API key
 const DEFAULT_GEMINI_KEY = 'AIzaSyCdz0O0nfPEaIHRNGvHUlBdBPOU4URqCFE'; // Your Gemini API key
 const USE_GEMINI = true; // Using Gemini API (faster and more reliable)
@@ -1153,7 +1153,7 @@ async function analyzeImage() {
             // Use Gemini API (uses default key or saved key)
             const apiKey = localStorage.getItem(API_STORAGE_KEY) || DEFAULT_GEMINI_KEY;
             if (!apiKey) {
-                resultText.innerHTML = `Please add your Gemini API key first, or switch to free Hugging Face API. <br><code style="background: #F3F4F6; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Get free key: https://makersuite.google.com/app/apikey</code>`;
+                resultText.innerHTML = `Please add your Gemini API key first. <br><code style="background: #F3F4F6; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Get free key: https://makersuite.google.com/app/apikey</code>`;
                 resultText.style.color = '#EF4444';
                 analyzeBtn.disabled = false;
                 analyzeBtn.textContent = '🔍 Analyze Image';
@@ -1162,65 +1162,121 @@ async function analyzeImage() {
             
             // Convert base64 to blob for Gemini
             const base64Data = uploadedImageData.split(',')[1];
-            const response = await fetch(`${GEMINI_API_ENDPOINT}/${GEMINI_VISION_MODEL}:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: 'What objects do you see in this image? List all main objects with their names, one per line.' },
-                            {
-                                inline_data: {
-                                    mime_type: 'image/jpeg',
-                                    data: base64Data
+            
+            // Detect MIME type from base64 data URL
+            let mimeType = 'image/jpeg'; // default
+            if (uploadedImageData.startsWith('data:image/png')) {
+                mimeType = 'image/png';
+            } else if (uploadedImageData.startsWith('data:image/jpeg') || uploadedImageData.startsWith('data:image/jpg')) {
+                mimeType = 'image/jpeg';
+            } else if (uploadedImageData.startsWith('data:image/gif')) {
+                mimeType = 'image/gif';
+            } else if (uploadedImageData.startsWith('data:image/webp')) {
+                mimeType = 'image/webp';
+            }
+            
+            // Use Gemini API - try multiple endpoints and model combinations
+            // Google AI Studio API keys use different endpoints than Google Cloud keys
+            const endpointsToTry = [
+                { endpoint: 'https://generativelanguage.googleapis.com/v1beta/models', models: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro-vision', 'gemini-pro'] },
+                { endpoint: 'https://generativelanguage.googleapis.com/v1/models', models: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro-vision', 'gemini-pro'] },
+                { endpoint: 'https://generativelanguage.googleapis.com/v1beta', models: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro-vision'] }
+            ];
+            
+            let response = null;
+            let data = null;
+            let lastError = null;
+            let success = false;
+            let usedModel = null;
+            let usedEndpoint = null;
+            
+            // Try each endpoint with its models
+            for (const { endpoint, models } of endpointsToTry) {
+                for (const model of models) {
+                    try {
+                        // Try different URL formats
+                        const urlFormats = [
+                            `${endpoint}/${model}:generateContent?key=${apiKey}`,
+                            `${endpoint}/models/${model}:generateContent?key=${apiKey}`
+                        ];
+                        
+                        for (const apiUrl of urlFormats) {
+                            try {
+                                response = await fetch(apiUrl, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        contents: [{
+                                            parts: [
+                                                { text: 'What objects do you see in this image? List all main objects with their names, one per line.' },
+                                                {
+                                                    inline_data: {
+                                                        mime_type: mimeType,
+                                                        data: base64Data
+                                                    }
+                                                }
+                                            ]
+                                        }]
+                                    })
+                                });
+                                
+                                data = await response.json();
+                                
+                                if (response.ok) {
+                                    success = true;
+                                    usedModel = model;
+                                    usedEndpoint = endpoint;
+                                    console.log(`✅ Successfully used Gemini model: ${model} with endpoint: ${endpoint}`);
+                                    break;
+                                } else {
+                                    // If it's an auth error, don't try other models
+                                    if (response.status === 401 || response.status === 403) {
+                                        throw new Error(`API Key Error: ${data?.error?.message || 'Invalid API key or insufficient permissions'}`);
+                                    }
+                                    lastError = data?.error?.message || `HTTP ${response.status}`;
+                                    console.warn(`❌ Gemini model ${model} at ${endpoint} failed: ${lastError}`);
                                 }
+                            } catch (fetchErr) {
+                                lastError = fetchErr.message;
+                                continue;
                             }
-                        ]
-                    }]
-                })
-            });
-            
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data?.error?.message || `HTTP error! status: ${response.status}`);
-            }
-            analysis = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Could not analyze image.';
-        } else {
-            // Use Hugging Face API (100% FREE, no API key needed!)
-            // Convert base64 data URL to blob
-            const base64Response = await fetch(uploadedImageData);
-            const blob = await base64Response.blob();
-            
-            const response = await fetch(`${HUGGINGFACE_API_ENDPOINT}/${HUGGINGFACE_IMAGE_MODEL}`, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json'
-                },
-                body: blob
-            });
-            
-            if (!response.ok) {
-                // Model might be loading, wait and retry
-                if (response.status === 503) {
-                    resultText.textContent = 'Model is loading, please wait 10-20 seconds and try again...';
-                    resultText.style.color = '#F59E0B';
-                    analyzeBtn.disabled = false;
-                    analyzeBtn.textContent = '🔍 Analyze Image';
-                    return;
+                        }
+                        
+                        if (success) break;
+                    } catch (err) {
+                        lastError = err.message;
+                        console.warn(`❌ Error trying ${model}:`, err);
+                        continue;
+                    }
                 }
-                throw new Error(`HTTP error! status: ${response.status}`);
+                
+                if (success) break;
             }
             
-            const data = await response.json();
-            // Hugging Face returns caption text directly
-            if (Array.isArray(data) && data[0]?.generated_text) {
-                analysis = `Objects identified:\n${data[0].generated_text}`;
-            } else if (data.generated_text) {
-                analysis = `Objects identified:\n${data.generated_text}`;
-            } else {
-                analysis = JSON.stringify(data, null, 2);
+            if (!success) {
+                // Try to get list of available models for better error message
+                try {
+                    const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+                    const listResponse = await fetch(listUrl);
+                    if (listResponse.ok) {
+                        const listData = await listResponse.json();
+                        const availableModels = listData?.models?.map(m => m.name).join(', ') || 'Unable to retrieve';
+                        lastError = `${lastError}. Available models: ${availableModels}`;
+                    }
+                } catch (listErr) {
+                    console.warn('Could not list models:', listErr);
+                }
+                
+                throw new Error(`Gemini API Error: ${lastError || 'All model attempts failed'}. Please verify your API key is from https://makersuite.google.com/app/apikey and has Gemini API access enabled.`);
+            }
+            
+            // Extract analysis from successful Gemini response
+            analysis = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Could not analyze image.';
+            
+            if (!analysis || analysis.trim() === '') {
+                throw new Error('Gemini API returned empty response. Please try again.');
             }
         }
         
@@ -1250,30 +1306,30 @@ async function analyzeImage() {
         let helpfulMessage = '';
         
         // Provide helpful error messages based on error type
-        if (errorMessage.includes('503') || errorMessage.includes('loading')) {
-            helpfulMessage = `
-                <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px; border-radius: 8px; margin-top: 8px;">
-                    <strong style="color: #92400E;">⏳ Model Loading</strong>
-                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #78350F;">
-                        The free Hugging Face model is starting up. Please wait 10-20 seconds and try again. This is normal for free models.
-                    </p>
-                </div>
-            `;
-        } else if (errorMessage.includes('quota') || errorMessage.includes('billing')) {
+        if (errorMessage.includes('quota') || errorMessage.includes('billing')) {
             helpfulMessage = `
                 <div style="background: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px; border-radius: 8px; margin-top: 8px;">
                     <strong style="color: #DC2626;">⚠️ API Quota Issue</strong>
                     <p style="margin: 8px 0 0 0; font-size: 13px; color: #991B1B;">
-                        If using Gemini API, check your quota. Otherwise, the free Hugging Face API should work without limits.
+                        Your Gemini API quota may have been exceeded. Please check your Google Cloud Console or try again later.
                     </p>
                 </div>
             `;
-        } else if (errorMessage.includes('401') || errorMessage.includes('Invalid')) {
+        } else if (errorMessage.includes('401') || errorMessage.includes('Invalid') || errorMessage.includes('API key')) {
             helpfulMessage = `
                 <div style="background: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px; border-radius: 8px; margin-top: 8px;">
                     <strong style="color: #DC2626;">⚠️ API Key Issue</strong>
                     <p style="margin: 8px 0 0 0; font-size: 13px; color: #991B1B;">
-                        If using Gemini, check your API key. Otherwise, switch to free Hugging Face (no key needed).
+                        Please verify your Gemini API key is correct and has access to the Gemini API. Get your key at: <a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: #DC2626;">https://makersuite.google.com/app/apikey</a>
+                    </p>
+                </div>
+            `;
+        } else if (errorMessage.includes('not found') || errorMessage.includes('not supported')) {
+            helpfulMessage = `
+                <div style="background: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px; border-radius: 8px; margin-top: 8px;">
+                    <strong style="color: #DC2626;">⚠️ Model Not Available</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #991B1B;">
+                        The Gemini model may not be available. Please check your API key permissions or try again later.
                     </p>
                 </div>
             `;
@@ -2360,6 +2416,12 @@ function trackModuleCompletion(moduleName) {
     updateProgressUI();
 }
 
+// Sign Language navigation - redirects to separate page
+function openSignLanguage() {
+    window.location.href = 'sign-language.html';
+    playSound('click');
+}
+
 function openParentsCommunity(event) {
     event.preventDefault();
     
@@ -2904,30 +2966,6 @@ function renderSupportFeatures(category) {
     const templates = {
         general: `
             <div class="support-widget">
-                <h3>📸 Object Recognition</h3>
-                <p>Upload an image to learn what objects are in it!</p>
-                
-                <div class="image-upload-area" id="imageUploadArea">
-                    <input type="file" id="imageUploadInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
-                    <label for="imageUploadInput" class="upload-label">
-                        <span class="upload-icon">📷</span>
-                        <span class="upload-text">Click to Upload Image</span>
-                        <span class="upload-hint">or drag and drop</span>
-                    </label>
-                    <div class="image-preview" id="imagePreview" style="display: none;">
-                        <img id="previewImage" src="" alt="Preview">
-                        <button class="remove-image-btn" onclick="removeImage()">✖</button>
-                    </div>
-                </div>
-                <button class="tip-btn" id="analyzeImageBtn" onclick="analyzeImage()" style="display: none; width: 100%; margin-top: 12px;">
-                    🔍 Analyze Image
-                </button>
-                <div class="image-result" id="imageResult" style="display: none;">
-                    <h4>📝 Object Names:</h4>
-                    <div id="imageResultText" style="min-height: 40px; padding: 8px 0;"></div>
-                </div>
-            </div>
-            <div class="support-widget">
                 <h3>📄 PDF Reader</h3>
                 <p>Upload a PDF file and we'll read it aloud for you!</p>
                 
@@ -2966,47 +3004,6 @@ function renderSupportFeatures(category) {
                     <h4>📖 PDF Content:</h4>
                     <div class="pdf-text-container" id="pdfTextContainer">
                         <div class="pdf-text" id="pdfText"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="support-widget">
-                <h3>🎥 YouTube Transcript</h3>
-                <p>Paste a YouTube video link to get the transcript in text format!</p>
-                
-                <div class="youtube-input-area" id="youtubeInputArea">
-                    <input 
-                        type="text" 
-                        id="youtubeUrlInput" 
-                        class="youtube-url-input" 
-                        placeholder="Paste YouTube URL here (e.g., https://www.youtube.com/watch?v=...)"
-                        autocomplete="off"
-                    >
-                    <button class="tip-btn" id="fetchTranscriptBtn" onclick="fetchYouTubeTranscript()" style="width: 100%; margin-top: 12px;">
-                        📝 Get Transcript
-                    </button>
-                </div>
-                
-                <div class="youtube-video-info" id="youtubeVideoInfo" style="display: none;">
-                    <div class="video-title" id="youtubeVideoTitle"></div>
-                    <button class="remove-youtube-btn" onclick="clearYouTubeTranscript()">✖</button>
-                </div>
-                
-                <div class="youtube-transcript-controls" id="youtubeTranscriptControls" style="display: none;">
-                    <button class="tip-btn" id="readTranscriptBtn" onclick="readYouTubeTranscript()" style="width: 100%; margin-top: 12px;">
-                        🔊 Read Transcript
-                    </button>
-                    <button class="tip-btn" id="pauseTranscriptBtn" onclick="pauseTranscriptReading()" style="width: 100%; margin-top: 8px; display: none;">
-                        ⏸️ Pause Reading
-                    </button>
-                    <button class="tip-btn" id="stopTranscriptBtn" onclick="stopTranscriptReading()" style="width: 100%; margin-top: 8px; display: none;">
-                        ⏹️ Stop Reading
-                    </button>
-                </div>
-                
-                <div class="youtube-transcript-content" id="youtubeTranscriptContent" style="display: none;">
-                    <h4>📄 Transcript:</h4>
-                    <div class="transcript-text-container" id="transcriptTextContainer">
-                        <div class="transcript-text" id="transcriptText"></div>
                     </div>
                 </div>
             </div>
@@ -3200,11 +3197,9 @@ function renderSupportFeatures(category) {
     supportFeaturePanel.innerHTML = templates[category] || templates.general;
 
     if (category === 'general') {
-        // Initialize image upload drag and drop
+        // Initialize PDF upload drag and drop
         setTimeout(() => {
-            initImageUploadDragDrop();
             initPdfUploadDragDrop();
-            initYouTubeTranscript();
         }, 100);
     }
 
@@ -3450,6 +3445,63 @@ if (document.readyState === 'loading') {
     restoreSession();
 }
 
+// Handle direct /home route access - redirect to root with hash
+if (window.location.pathname === '/home') {
+    window.location.replace('/#home');
+}
+
+// Initialize hash navigation and smooth scrolling
+function initHashNavigation() {
+    // Handle hash links with smooth scrolling
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            const href = this.getAttribute('href');
+            if (href === '#' || !href) return;
+            
+            const targetId = href.substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                e.preventDefault();
+                targetElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+                // Update URL hash without triggering scroll
+                window.history.pushState(null, '', href);
+            }
+        });
+    });
+    
+    // Handle hash on page load
+    if (window.location.hash) {
+        const hash = window.location.hash.substring(1);
+        const targetElement = document.getElementById(hash);
+        if (targetElement) {
+            setTimeout(() => {
+                targetElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }, 100);
+        }
+    }
+    
+    // Handle browser back/forward buttons
+    window.addEventListener('popstate', () => {
+        if (window.location.hash) {
+            const hash = window.location.hash.substring(1);
+            const targetElement = document.getElementById(hash);
+            if (targetElement) {
+                targetElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }
+        }
+    });
+}
+
 // Initialize on load
 window.addEventListener('load', () => {
     // Preload voices
@@ -3462,6 +3514,7 @@ window.addEventListener('load', () => {
     syncSettingsUI();
     // Don't auto-select any profile - let users choose
     initMotionCarousel();
+    initHashNavigation(); // Initialize hash navigation
     bootstrapAuth();
     
     // Initialize API key - auto-save if not already in localStorage
@@ -3580,25 +3633,30 @@ function unlockApp(user, options = {}) {
         hasWelcomedUser = true;
     }
     
-    // If we're in an iframe (React Router context), notify parent and redirect
+    // If we're in an iframe (React Router context), notify parent
     if (window.parent !== window.self) {
         // Send message to parent React Router
         window.parent.postMessage({ type: 'AUTH_SUCCESS', user: user }, '*');
-        // Also check if we should redirect
+        // If on root page, scroll to home section
         if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
-            // We're on the login page, redirect to /home
             setTimeout(() => {
-                if (window.parent !== window.self) {
-                    window.parent.location.href = '/home';
-                } else {
-                    window.location.href = '/home';
+                const homeSection = document.getElementById('home');
+                if (homeSection) {
+                    homeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             }, 500);
         }
     } else if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
-        // Not in iframe, but on root/login page - redirect to /home
+        // Not in iframe, but on root/login page - scroll to home section
         setTimeout(() => {
-            window.location.href = '/home';
+            const homeSection = document.getElementById('home');
+            if (homeSection) {
+                homeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            // Also update URL hash if needed
+            if (!window.location.hash) {
+                window.history.replaceState(null, '', '#home');
+            }
         }, 500);
     }
 }
