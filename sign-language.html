@@ -139,6 +139,28 @@
     </style>
 </head>
 <body>
+    <script>
+        // Ensure the user is authenticated before allowing access to the Sign Language page
+        (function enforceAuthentication() {
+            const AUTH_STORAGE_KEY = 'brightwords_google_user';
+            try {
+                const cachedSession = localStorage.getItem(AUTH_STORAGE_KEY);
+                if (!cachedSession) {
+                    // No session found, redirect to main login page
+                    window.location.replace('index.html');
+                    return;
+                }
+                const parsed = JSON.parse(cachedSession);
+                if (!parsed?.credential) {
+                    throw new Error('Invalid session payload');
+                }
+            } catch (error) {
+                console.warn('Invalid session detected, redirecting to login.', error);
+                localStorage.removeItem('brightwords_google_user');
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
     <div class="sign-language-page">
         <div class="sign-language-header">
             <div class="sign-language-title">
@@ -168,10 +190,27 @@
         console.log('Sign Language page loaded');
         
         // Handle back button
-        document.querySelector('.back-button').addEventListener('click', function(e) {
-            e.preventDefault();
-            window.location.href = 'index.html';
-        });
+        (function initBackButton() {
+            const backBtn = document.querySelector('.back-button');
+            if (!backBtn) return;
+
+            backBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                const hasHistory = window.history.length > 1;
+                const referrer = document.referrer ? new URL(document.referrer, window.location.href) : null;
+                const sameOriginReferrer = referrer && referrer.origin === window.location.origin;
+
+                if (hasHistory && sameOriginReferrer) {
+                    // Return to previously authenticated page without reloading login flow
+                    window.history.back();
+                    return;
+                }
+
+                // Fallback to main home page (session will unlock automatically if already logged in)
+                window.location.href = 'index.html#home';
+            });
+        })();
     </script>
 </body>
 </html>

@@ -3062,22 +3062,6 @@ function renderSupportFeatures(category) {
                         <span style="font-size: 14px; opacity: 0.9; font-weight: 400;">Discover stories with voice narration</span>
                     </button>
                 </div>
-                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2);">
-                    <button class="voice-btn" id="voiceGuideBtn" style="
-                        background: rgba(255,255,255,0.2);
-                        color: white;
-                        border: 2px solid rgba(255,255,255,0.3);
-                        padding: 12px 24px;
-                        border-radius: 12px;
-                        font-size: 16px;
-                        font-weight: 600;
-                        cursor: pointer;
-                        width: 100%;
-                        transition: all 0.2s;
-                    " onmouseenter="this.style.background='rgba(255,255,255,0.3)';" onmouseleave="this.style.background='rgba(255,255,255,0.2)';">
-                        🔊 Get Voice Guidance
-                    </button>
-                </div>
             </div>
         `,
         deaf: `
@@ -3127,19 +3111,6 @@ function renderSupportFeatures(category) {
                         <span>Spelling Wizard</span>
                         <span style="font-size: 12px; opacity: 0.9; font-weight: 400;">Visual spelling with hints</span>
                     </button>
-                </div>
-            </div>
-            <div class="support-widget" aria-label="Visual helper chat">
-                <h3>ChatGPT Visual Coach</h3>
-                <p class="chat-intro">Type a question and get instant text replies tuned for deaf and hard-of-hearing learners.</p>
-                <div class="chat-log" id="deafChatLog" aria-live="polite"></div>
-                <div class="chat-input">
-                    <label for="deafChatInput">Ask a quick question</label>
-                    <div class="chat-input-row">
-                        <input type="text" id="deafChatInput" placeholder="Type your message..." aria-label="Chat message">
-                        <button class="chat-send" id="deafChatSend">Send</button>
-                    </div>
-                <p class="chat-hint">Powered by Google Gemini AI. Fast and reliable responses!</p>
                 </div>
             </div>
         `,
@@ -3204,28 +3175,12 @@ function renderSupportFeatures(category) {
     }
 
     if (category === 'blind') {
-        const voiceBtn = document.getElementById('voiceGuideBtn');
-        if (voiceBtn) {
-            voiceBtn.addEventListener('click', () => {
-                startVoiceGuide('Here is a quick tour. Use the navigation to jump between learn, progress, or games. You can choose between Phonics Fun to learn letter sounds, or Story Explorer to enjoy narrated stories. Both activities are optimized for audio learning.');
-            });
-        }
-        
         // Announce available activities
         setTimeout(() => {
             speak('Blind and low vision mode activated. You can choose Phonics Fun to learn letter sounds with audio feedback, or Story Explorer to enjoy stories with full narration. Both activities support keyboard navigation.');
         }, 500);
     }
 
-    if (category === 'deaf') {
-        initChatSupport();
-    }
-
-}
-
-function startVoiceGuide(message) {
-    speak(message);
-    playSound('click');
 }
 
 // Function to open activities from Blind/Low Vision profile
@@ -3243,65 +3198,6 @@ function openBlindActivity(activityType) {
             openModule('reading');
         }, 1000);
     }
-}
-
-function initChatSupport() {
-    const chatLog = document.getElementById('deafChatLog');
-    const chatInput = document.getElementById('deafChatInput');
-    const chatSend = document.getElementById('deafChatSend');
-    if (!chatLog || !chatInput || !chatSend) return;
-
-    const appendMessage = (role, text, options = {}) => {
-        const row = document.createElement('div');
-        row.className = `chat-row ${role}`;
-        const bubble = document.createElement('div');
-        bubble.className = 'chat-bubble';
-        if (options.typing) {
-            bubble.dataset.typing = 'true';
-        }
-        const textEl = document.createElement('p');
-        textEl.textContent = text;
-        const stamp = document.createElement('span');
-        stamp.textContent = options.typing ? '···' : formatTimestamp();
-        bubble.append(textEl, stamp);
-        row.appendChild(bubble);
-        chatLog.appendChild(row);
-        chatLog.scrollTop = chatLog.scrollHeight;
-        return { bubble, textEl, stamp };
-    };
-
-    const updateMessage = (messageRef, nextText) => {
-        if (!messageRef) return;
-        messageRef.textEl.textContent = nextText;
-        messageRef.stamp.textContent = formatTimestamp();
-        messageRef.bubble.dataset.typing = 'false';
-    };
-
-    const showTyping = () => appendMessage('coach', 'Typing…', { typing: true });
-
-    const sendMessage = async () => {
-        const value = chatInput.value.trim();
-        if (!value) return;
-        appendMessage('user', value);
-        chatInput.value = '';
-        chatInput.focus();
-        const typingIndicator = showTyping();
-        chatSend.disabled = true;
-        try {
-            const reply = await fetchAiResponse(value);
-            updateMessage(typingIndicator, reply);
-        } finally {
-            chatSend.disabled = false;
-        }
-    };
-
-    chatSend.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keypress', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            sendMessage();
-        }
-    });
 }
 
 function initMotionCarousel() {
