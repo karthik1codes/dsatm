@@ -11,6 +11,80 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body class="auth-locked">
+    <script>
+        // IMMEDIATE session check - runs synchronously right after body tag to prevent login screen flash
+        (function() {
+            const AUTH_STORAGE_KEY = 'brightwords_google_user';
+            try {
+                const cached = localStorage.getItem(AUTH_STORAGE_KEY);
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (parsed?.credential) {
+                        // Session exists - check if we're on the login page and should redirect
+                        const currentPath = window.location.pathname;
+                        const isLoginPage = currentPath === '/' || currentPath === '/index.html' || currentPath === '/index-react.html';
+                        
+                        // If we're in an iframe, let parent handle redirect
+                        if (window.parent !== window.self) {
+                            // In iframe - unlock but let parent React Router handle navigation
+                            const body = document.body;
+                            if (body) {
+                                body.classList.remove('auth-locked');
+                                body.classList.add('authenticated');
+                            }
+                            
+                            function setupAuthElements() {
+                                const overlay = document.getElementById('authOverlay');
+                                const app = document.getElementById('appContent');
+                                if (overlay) {
+                                    overlay.setAttribute('aria-hidden', 'true');
+                                }
+                                if (app) {
+                                    app.removeAttribute('aria-hidden');
+                                }
+                            }
+                            
+                            if (document.readyState === 'loading') {
+                                document.addEventListener('DOMContentLoaded', setupAuthElements);
+                            } else {
+                                setupAuthElements();
+                            }
+                        } else if (isLoginPage) {
+                            // Not in iframe and on login page - redirect to /home
+                            window.location.href = '/home';
+                            return;
+                        } else {
+                            // Not on login page - unlock normally
+                            const body = document.body;
+                            if (body) {
+                                body.classList.remove('auth-locked');
+                                body.classList.add('authenticated');
+                            }
+                            
+                            function setupAuthElements() {
+                                const overlay = document.getElementById('authOverlay');
+                                const app = document.getElementById('appContent');
+                                if (overlay) {
+                                    overlay.setAttribute('aria-hidden', 'true');
+                                }
+                                if (app) {
+                                    app.removeAttribute('aria-hidden');
+                                }
+                            }
+                            
+                            if (document.readyState === 'loading') {
+                                document.addEventListener('DOMContentLoaded', setupAuthElements);
+                            } else {
+                                setupAuthElements();
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                // Silently fail - main.js will handle auth properly
+            }
+        })();
+    </script>
     <div id="authOverlay" class="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="authTitle">
         <div class="auth-card">
             <div class="auth-logo">✨</div>
@@ -50,6 +124,7 @@
                     <a href="#games" class="nav-item" role="menuitem" aria-describedby="keyboardHint" onclick="scrollToGames(event)">Games</a>
                     <a href="#parents" class="nav-item" role="menuitem" aria-describedby="keyboardHint" onclick="openParentsCommunity(event)">Parents</a>
                     <a href="#feedback" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Feedback</a>
+                    <a href="/aws-augmentability-main/index.html" class="nav-item superpower-link-bypass" role="menuitem" aria-describedby="keyboardHint" title="SuperPower - AWS AugmentAbility features" id="superpower-link">⚡ SuperPower</a>
                 </div>
 
                 <div class="user-section" aria-label="User quick actions">
@@ -604,17 +679,6 @@
                 <option value="hard">Hard</option>
             </select>
         </div>
-
-        <div class="setting-item">
-            <div class="setting-label">
-                <span>🎨 Color Theme</span>
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <div id="theme-purple" class="theme-swatch" data-theme="purple" onclick="changeColorTheme('purple')" style="width: 40px; height: 40px; background: linear-gradient(135deg, #8B5CF6, #EC4899); border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseenter="this.style.transform='scale(1.15)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)';" onmouseleave="if(!this.style.border.includes('1F2937')){this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';}"></div>
-                <div id="theme-blue" class="theme-swatch" data-theme="blue" onclick="changeColorTheme('blue')" style="width: 40px; height: 40px; background: linear-gradient(135deg, #3B82F6, #10B981); border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseenter="this.style.transform='scale(1.15)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)';" onmouseleave="if(!this.style.border.includes('1F2937')){this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';}"></div>
-                <div id="theme-orange" class="theme-swatch" data-theme="orange" onclick="changeColorTheme('orange')" style="width: 40px; height: 40px; background: linear-gradient(135deg, #F59E0B, #FB923C); border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseenter="this.style.transform='scale(1.15)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)';" onmouseleave="if(!this.style.border.includes('1F2937')){this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';}"></div>
-            </div>
-        </div>
     </aside>
 
     <!-- Achievement Popup -->
@@ -632,7 +696,49 @@
 
         <script src="main.js"></script>
         <script src="accessibility.js"></script>
+        <script>
+            // SuperPower navigation - redirect in same window
+            (function() {
+                function setupSuperPowerLink() {
+                    const superPowerLink = document.getElementById('superpower-link');
+                    if (superPowerLink) {
+                        // Force enable pointer events and visibility
+                        superPowerLink.style.pointerEvents = 'auto';
+                        superPowerLink.style.opacity = '1';
+                        superPowerLink.style.position = 'relative';
+                        superPowerLink.style.zIndex = '10000';
+                        
+                        // Remove any existing handlers by cloning
+                        const newLink = superPowerLink.cloneNode(true);
+                        superPowerLink.parentNode.replaceChild(newLink, superPowerLink);
+                        
+                        // Add click handler to redirect in same window
+                        newLink.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            // Redirect in same window to SuperPower login page
+                            window.location.href = '/aws-augmentability-main/index.html';
+                            return false;
+                        });
+                        
+                        console.log('SuperPower link configured for same-window redirect');
+                    }
+                }
+                
+                // Setup immediately and on DOM ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', setupSuperPowerLink);
+                } else {
+                    setupSuperPowerLink();
+                }
+                
+                // Also setup after a delay to ensure it's processed
+                setTimeout(setupSuperPowerLink, 100);
+                setTimeout(setupSuperPowerLink, 500);
+            })();
+        </script>
     </div>
 </body>
 </html>
+
 

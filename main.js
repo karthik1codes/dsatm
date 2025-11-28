@@ -3617,6 +3617,16 @@ document.getElementById('difficultySelect').onchange = function() {
     playSound('click');
 };
 
+// Restore session immediately on DOM ready to prevent login screen flash
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        restoreSession();
+    });
+} else {
+    // DOM already loaded, restore immediately
+    restoreSession();
+}
+
 // Initialize on load
 window.addEventListener('load', () => {
     // Preload voices
@@ -3642,7 +3652,10 @@ window.addEventListener('load', () => {
 });
 
 function bootstrapAuth() {
-    restoreSession();
+    // Session already restored on DOMContentLoaded, just ensure it's set up
+    if (!currentUser) {
+        restoreSession();
+    }
     registerSignOut();
     waitForGoogleClient(initializeGoogleAuth);
 }
@@ -3739,6 +3752,28 @@ function unlockApp(user, options = {}) {
         const name = user?.given_name || user?.name || 'Bright Explorer';
         speak(`Welcome ${name}! Let's make learning fun!`);
         hasWelcomedUser = true;
+    }
+    
+    // If we're in an iframe (React Router context), notify parent and redirect
+    if (window.parent !== window.self) {
+        // Send message to parent React Router
+        window.parent.postMessage({ type: 'AUTH_SUCCESS', user: user }, '*');
+        // Also check if we should redirect
+        if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+            // We're on the login page, redirect to /home
+            setTimeout(() => {
+                if (window.parent !== window.self) {
+                    window.parent.location.href = '/home';
+                } else {
+                    window.location.href = '/home';
+                }
+            }, 500);
+        }
+    } else if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+        // Not in iframe, but on root/login page - redirect to /home
+        setTimeout(() => {
+            window.location.href = '/home';
+        }, 500);
     }
 }
 
@@ -3838,9 +3873,22 @@ function restoreSession() {
     try {
         const parsed = JSON.parse(cached);
         if (parsed?.credential) {
-            currentUser = parsed;
-            unlockApp(parsed, { silent: true });
-            // Data loading happens in unlockApp now
+            // Validate JWT token hasn't expired (Google tokens are valid for 1 hour, but we persist session)
+            // We'll keep the session until user explicitly signs out
+            const tokenData = decodeJwtCredential(parsed.credential);
+            
+            // Check if token exists and has required fields
+            if (tokenData && tokenData.email) {
+                // Token is valid, restore session
+                currentUser = parsed;
+                // Update login time to keep session fresh
+                currentUser.loginTime = new Date().toISOString();
+                localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(currentUser));
+                unlockApp(parsed, { silent: true });
+                console.log('Session restored for:', tokenData.email);
+            } else {
+                throw new Error('Invalid token structure');
+            }
         } else {
             throw new Error('Invalid session payload');
         }
