@@ -8,7 +8,7 @@ let settings = {
     sound: true,
     difficulty: 'easy'
 };
-let currentCategory = 'general';
+let currentCategory = null; // No category selected by default
 const GOOGLE_CLIENT_ID = '369705995460-d2f937r1bj3963upbmob113ngkf5v6og.apps.googleusercontent.com';
 const AUTH_STORAGE_KEY = 'brightwords_google_user';
 let currentUser = null;
@@ -87,8 +87,8 @@ const supportProfiles = {
         settings: { tts: false, hints: true, sound: false, difficulty: 'medium' }
     },
     neurodiverse: {
-        message: 'Neurodiverse-friendly mode enabled. Pace adjusted with extra hints.',
-        announcement: 'Neurodiverse support enabled with calm pacing and added hints.',
+        message: 'Games mode enabled. Have fun while learning!',
+        announcement: 'Games mode enabled. Challenge yourself and have fun!',
         settings: { tts: true, hints: true, sound: true, difficulty: 'easy' }
     }
 };
@@ -96,12 +96,17 @@ const supportProfiles = {
 // Initialize Speech Synthesis
 const synth = window.speechSynthesis;
 const supportFeaturePanel = document.getElementById('supportFeaturePanel');
-const OPENAI_CHAT_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
-const OPENAI_VISION_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
-const OPENAI_MODEL = 'gpt-4o-mini';
-const OPENAI_VISION_MODEL = 'gpt-4o'; // Requires paid OpenAI plan. Alternative: 'gpt-4o-mini' (cheaper but may have lower quality)
-const OPENAI_STORAGE_KEY = 'brightwords_openai_key';
-const DEFAULT_AI_KEY = '';
+// Free API Configuration - Using Google Gemini API (Free Tier)
+const HUGGINGFACE_IMAGE_MODEL = 'Salesforce/blip-image-captioning-base'; // Free image recognition (fallback)
+const HUGGINGFACE_CHAT_MODEL = 'microsoft/DialoGPT-medium'; // Free chat model (fallback)
+const HUGGINGFACE_API_ENDPOINT = 'https://api-inference.huggingface.co/models';
+// Google Gemini API (Free tier) - Primary API
+const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
+const GEMINI_CHAT_MODEL = 'gemini-pro';
+const GEMINI_VISION_MODEL = 'gemini-pro-vision';
+const API_STORAGE_KEY = 'brightwords_api_key'; // For Gemini API key
+const DEFAULT_GEMINI_KEY = 'AIzaSyCdz0O0nfPEaIHRNGvHUlBdBPOU4URqCFE'; // Your Gemini API key
+const USE_GEMINI = true; // Using Gemini API (faster and more reliable)
 const FALLBACK_REPLIES = [
     'Try tracing the word while saying each letter in your head.',
     'Break the task into two tiny steps and celebrate in between.',
@@ -1042,73 +1047,19 @@ let youtubeTranscriptText = '';
 let isReadingTranscript = false;
 let transcriptSpeechUtterance = null;
 
-// API Key Management Functions
-function toggleApiKeyInput() {
-    const inputGroup = document.getElementById('apiKeyInputGroup');
-    const toggleBtn = document.getElementById('toggleApiKeyBtn');
-    
-    if (inputGroup && toggleBtn) {
-        const isVisible = inputGroup.style.display !== 'none';
-        inputGroup.style.display = isVisible ? 'none' : 'block';
-        toggleBtn.textContent = isVisible ? '🔑 Setup API Key' : '❌ Cancel';
-        
-        if (!isVisible) {
-            setTimeout(() => {
-                const input = document.getElementById('apiKeyInput');
-                if (input) input.focus();
-            }, 100);
+// API Key Management Functions (Code-only, no UI)
+function initializeApiKey() {
+    // Automatically save Gemini API key to localStorage if not already set
+    if (USE_GEMINI) {
+        const existingKey = localStorage.getItem(API_STORAGE_KEY);
+        if (!existingKey && DEFAULT_GEMINI_KEY) {
+            localStorage.setItem(API_STORAGE_KEY, DEFAULT_GEMINI_KEY);
+            console.log('✅ Gemini API key automatically initialized and saved from code');
+        } else if (existingKey) {
+            console.log('✅ Using saved Gemini API key');
         }
-    }
-    playSound('click');
-}
-
-function saveApiKey() {
-    const input = document.getElementById('apiKeyInput');
-    if (!input) return;
-    
-    const apiKey = input.value.trim();
-    
-    if (!apiKey) {
-        alert('Please enter an API key!');
-        speak('Please enter an API key');
-        return;
-    }
-    
-    if (!apiKey.startsWith('sk-')) {
-        alert('Invalid API key format. OpenAI API keys start with "sk-"');
-        speak('Invalid API key format');
-        return;
-    }
-    
-    localStorage.setItem(OPENAI_STORAGE_KEY, apiKey);
-    updateApiKeyStatus();
-    input.value = '';
-    const inputGroup = document.getElementById('apiKeyInputGroup');
-    const toggleBtn = document.getElementById('toggleApiKeyBtn');
-    if (inputGroup) inputGroup.style.display = 'none';
-    if (toggleBtn) toggleBtn.textContent = '🔑 Setup API Key';
-    
-    speak('API key saved successfully');
-    playSound('success');
-    showFeedback('✅ API key saved! You can now use image recognition.');
-}
-
-function updateApiKeyStatus() {
-    const statusText = document.getElementById('statusText');
-    const statusIcon = document.getElementById('apiKeyStatus')?.querySelector('.status-icon');
-    const apiKey = localStorage.getItem(OPENAI_STORAGE_KEY);
-    
-    if (statusText) {
-        if (apiKey && apiKey.startsWith('sk-')) {
-            const maskedKey = apiKey.substring(0, 7) + '...' + apiKey.substring(apiKey.length - 4);
-            statusText.textContent = `API Key: ${maskedKey} ✓`;
-            statusText.style.color = '#10B981';
-            if (statusIcon) statusIcon.textContent = '✅';
-        } else {
-            statusText.textContent = 'API Key: Not Set';
-            statusText.style.color = '#EF4444';
-            if (statusIcon) statusIcon.textContent = '🔑';
-        }
+    } else {
+        console.log('✅ Using Hugging Face Inference API (100% free, no API key needed!)');
     }
 }
 
@@ -1196,57 +1147,84 @@ async function analyzeImage() {
     speak('Analyzing image');
     
     try {
-        const apiKey = localStorage.getItem(OPENAI_STORAGE_KEY) || DEFAULT_AI_KEY;
+        let analysis = '';
         
-        if (!apiKey || !apiKey.startsWith('sk-')) {
-            resultText.innerHTML = `Please add your OpenAI API key first. <br><code style="background: #F3F4F6; padding: 4px 8px; border-radius: 4px; font-size: 12px;">localStorage.setItem('${OPENAI_STORAGE_KEY}','sk-xxx')</code>`;
-            resultText.style.color = '#EF4444';
-            analyzeBtn.disabled = false;
-            analyzeBtn.textContent = '🔍 Analyze Image';
-            return;
-        }
-        
-        const response = await fetch(OPENAI_VISION_ENDPOINT, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: OPENAI_VISION_MODEL,
-                messages: [
-                    {
-                        role: 'user',
-                        content: [
+        if (USE_GEMINI) {
+            // Use Gemini API (uses default key or saved key)
+            const apiKey = localStorage.getItem(API_STORAGE_KEY) || DEFAULT_GEMINI_KEY;
+            if (!apiKey) {
+                resultText.innerHTML = `Please add your Gemini API key first, or switch to free Hugging Face API. <br><code style="background: #F3F4F6; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Get free key: https://makersuite.google.com/app/apikey</code>`;
+                resultText.style.color = '#EF4444';
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🔍 Analyze Image';
+                return;
+            }
+            
+            // Convert base64 to blob for Gemini
+            const base64Data = uploadedImageData.split(',')[1];
+            const response = await fetch(`${GEMINI_API_ENDPOINT}/${GEMINI_VISION_MODEL}:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: 'What objects do you see in this image? List all main objects with their names, one per line.' },
                             {
-                                type: 'text',
-                                text: 'What objects do you see in this image? Please list all the main objects you can identify with their names in a clear, educational format suitable for a learning platform. Format your response as a simple list of object names, one per line.'
-                            },
-                            {
-                                type: 'image_url',
-                                image_url: {
-                                    url: uploadedImageData
+                                inline_data: {
+                                    mime_type: 'image/jpeg',
+                                    data: base64Data
                                 }
                             }
                         ]
-                    }
-                ],
-                max_tokens: 300
-            })
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData?.error?.message || `HTTP error! status: ${response.status}`);
+                    }]
+                })
+            });
+            
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data?.error?.message || `HTTP error! status: ${response.status}`);
+            }
+            analysis = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Could not analyze image.';
+        } else {
+            // Use Hugging Face API (100% FREE, no API key needed!)
+            // Convert base64 data URL to blob
+            const base64Response = await fetch(uploadedImageData);
+            const blob = await base64Response.blob();
+            
+            const response = await fetch(`${HUGGINGFACE_API_ENDPOINT}/${HUGGINGFACE_IMAGE_MODEL}`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                body: blob
+            });
+            
+            if (!response.ok) {
+                // Model might be loading, wait and retry
+                if (response.status === 503) {
+                    resultText.textContent = 'Model is loading, please wait 10-20 seconds and try again...';
+                    resultText.style.color = '#F59E0B';
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.textContent = '🔍 Analyze Image';
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            // Hugging Face returns caption text directly
+            if (Array.isArray(data) && data[0]?.generated_text) {
+                analysis = `Objects identified:\n${data[0].generated_text}`;
+            } else if (data.generated_text) {
+                analysis = `Objects identified:\n${data.generated_text}`;
+            } else {
+                analysis = JSON.stringify(data, null, 2);
+            }
         }
         
-        const data = await response.json();
-        console.log('API Response:', data); // Debug log
-        
-        const analysis = data?.choices?.[0]?.message?.content;
-        
-        if (!analysis) {
-            console.error('No analysis content in response:', data);
+        if (!analysis || analysis.trim() === '') {
             throw new Error('No content received from API. Please try again.');
         }
         
@@ -1272,36 +1250,30 @@ async function analyzeImage() {
         let helpfulMessage = '';
         
         // Provide helpful error messages based on error type
-        if (errorMessage.includes('quota') || errorMessage.includes('billing')) {
+        if (errorMessage.includes('503') || errorMessage.includes('loading')) {
+            helpfulMessage = `
+                <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px; border-radius: 8px; margin-top: 8px;">
+                    <strong style="color: #92400E;">⏳ Model Loading</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #78350F;">
+                        The free Hugging Face model is starting up. Please wait 10-20 seconds and try again. This is normal for free models.
+                    </p>
+                </div>
+            `;
+        } else if (errorMessage.includes('quota') || errorMessage.includes('billing')) {
             helpfulMessage = `
                 <div style="background: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px; border-radius: 8px; margin-top: 8px;">
                     <strong style="color: #DC2626;">⚠️ API Quota Issue</strong>
                     <p style="margin: 8px 0 0 0; font-size: 13px; color: #991B1B;">
-                        Your OpenAI account has exceeded its quota or billing is not set up. To fix this:
+                        If using Gemini API, check your quota. Otherwise, the free Hugging Face API should work without limits.
                     </p>
-                    <ol style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px; color: #991B1B;">
-                        <li>Visit <a href="https://platform.openai.com/account/billing" target="_blank" style="color: #DC2626; font-weight: 600;">OpenAI Billing</a> to add payment method</li>
-                        <li>Check your usage at <a href="https://platform.openai.com/usage" target="_blank" style="color: #DC2626; font-weight: 600;">OpenAI Usage</a></li>
-                        <li>Make sure you have credits available</li>
-                        <li>Try using a different API key if you have one</li>
-                    </ol>
                 </div>
             `;
         } else if (errorMessage.includes('401') || errorMessage.includes('Invalid')) {
             helpfulMessage = `
                 <div style="background: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px; border-radius: 8px; margin-top: 8px;">
-                    <strong style="color: #DC2626;">⚠️ Invalid API Key</strong>
+                    <strong style="color: #DC2626;">⚠️ API Key Issue</strong>
                     <p style="margin: 8px 0 0 0; font-size: 13px; color: #991B1B;">
-                        Your API key appears to be invalid. Please check that you've entered it correctly.
-                    </p>
-                </div>
-            `;
-        } else if (errorMessage.includes('model')) {
-            helpfulMessage = `
-                <div style="background: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px; border-radius: 8px; margin-top: 8px;">
-                    <strong style="color: #DC2626;">⚠️ Model Access Issue</strong>
-                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #991B1B;">
-                        The vision model (gpt-4o) may not be available for your account. You may need to upgrade your OpenAI plan.
+                        If using Gemini, check your API key. Otherwise, switch to free Hugging Face (no key needed).
                     </p>
                 </div>
             `;
@@ -2796,7 +2768,7 @@ function selectSupportCategory(category, silent = false) {
         messageBox.textContent = profile.message;
     }
     renderSupportFeatures(category);
-
+    
     if (!silent) {
         speak(profile.announcement);
         playSound('click');
@@ -2839,221 +2811,101 @@ function formatTimestamp(date = new Date()) {
 }
 
 async function fetchAiResponse(prompt) {
-    const apiKey = localStorage.getItem(OPENAI_STORAGE_KEY) || DEFAULT_AI_KEY;
     const fallback = FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)];
-    if (!apiKey) {
-        return `Connect ChatGPT by running localStorage.setItem('${OPENAI_STORAGE_KEY}','sk-xxx'). Until then, try this tip: ${fallback}`;
-    }
-
+    
     try {
-        const response = await fetch(OPENAI_CHAT_ENDPOINT, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: OPENAI_MODEL,
-                temperature: 0.4,
-                max_tokens: 200,
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'You are BrightWords Whisper Coach, a concise ChatGPT guide for deaf and hard-of-hearing learners. Reply with short, friendly sentences and practical tips.'
-                    },
-                    {
-                        role: 'user',
-                        content: prompt
+        let reply = '';
+        
+        if (USE_GEMINI) {
+            // Use Gemini API (uses default key or saved key)
+            const apiKey = localStorage.getItem(API_STORAGE_KEY) || DEFAULT_GEMINI_KEY;
+            if (!apiKey) {
+                return `Using free Hugging Face API. ${fallback}`;
+            }
+            
+            const response = await fetch(`${GEMINI_API_ENDPOINT}/${GEMINI_CHAT_MODEL}:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: `You are BrightWords Whisper Coach, a concise guide for learners. Reply with short, friendly sentences and practical tips. User question: ${prompt}`
+                        }]
+                    }]
+                })
+            });
+            
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data?.error?.message || 'API error');
+            }
+            
+            reply = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || fallback;
+        } else {
+            // Use Hugging Face API (100% FREE, no API key needed!)
+            const response = await fetch(`${HUGGINGFACE_API_ENDPOINT}/${HUGGINGFACE_CHAT_MODEL}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    inputs: {
+                        text: prompt,
+                        past_user_inputs: [],
+                        generated_responses: []
                     }
-                ]
-            })
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data?.error?.message || 'ChatGPT is warming up. Please try again.');
+                })
+            });
+            
+            if (!response.ok) {
+                if (response.status === 503) {
+                    // Model loading, return fallback
+                    return `The AI model is starting up. Please try again in a moment. ${fallback}`;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (data.generated_text) {
+                reply = data.generated_text.trim();
+            } else if (Array.isArray(data) && data[0]?.generated_text) {
+                reply = data[0].generated_text.trim();
+            } else {
+                reply = fallback;
+            }
         }
-
-        const reply = data?.choices?.[0]?.message?.content?.trim();
+        
         return reply || fallback;
     } catch (error) {
         console.error('AI error', error);
-        return `I'm having trouble reaching ChatGPT right now. ${fallback}`;
+        return `I'm having trouble reaching the AI right now. ${fallback}`;
     }
 }
 
 function renderSupportFeatures(category) {
     if (!supportFeaturePanel) return;
+    
+    // If no category is selected, show a prompt
+    if (!category) {
+        supportFeaturePanel.innerHTML = `
+            <div class="support-widget" style="text-align: center; padding: 40px 20px;">
+                <h3 style="color: var(--primary-purple); margin-bottom: 16px;">👆 Choose Your Support Profile</h3>
+                <p style="color: var(--light-text); font-size: 15px; line-height: 1.6;">
+                    Select a profile above to unlock personalized learning tools and features tailored to your needs!
+                </p>
+            </div>
+        `;
+        return;
+    }
+    
     const templates = {
         general: `
             <div class="support-widget">
-                <h3>📚 Learning Tips</h3>
-                <p id="learningTip">Click the button below to get a helpful learning tip!</p>
-                <button class="tip-btn" id="getTipBtn" onclick="getRandomTip()">💡 Get Learning Tip</button>
-            </div>
-            <div class="support-widget">
-                <h3>📊 Today's Progress</h3>
-                <div class="progress-stats">
-                    <div class="stat-mini">
-                        <span class="stat-mini-label">Lessons</span>
-                        <span class="stat-mini-value" id="todayLessons">0</span>
-                    </div>
-                    <div class="stat-mini">
-                        <span class="stat-mini-label">Points</span>
-                        <span class="stat-mini-value" id="todayPoints">0</span>
-                    </div>
-                    <div class="stat-mini">
-                        <span class="stat-mini-label">Time</span>
-                        <span class="stat-mini-value" id="todayTime">0m</span>
-                    </div>
-                </div>
-                <button class="tip-btn" onclick="resetDailyProgress()">🔄 Reset Daily Stats</button>
-            </div>
-            <div class="support-widget">
-                <h3>🎯 Choose Your Activity</h3>
-                <p style="margin-bottom: 16px; color: #4b5563;">Select an activity to start learning!</p>
-                <div class="activity-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
-                    <button class="activity-option-btn" onclick="openModule('phonics')" style="
-                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
-                        color: white;
-                        border: none;
-                        padding: 16px 12px;
-                        border-radius: 12px;
-                        font-size: 15px;
-                        font-weight: 600;
-                        cursor: pointer;
-                        transition: transform 0.2s, box-shadow 0.2s;
-                        text-align: center;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        gap: 6px;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
-                        <span style="font-size: 24px;">🔤</span>
-                        <span>Phonics Fun</span>
-                    </button>
-                    <button class="activity-option-btn" onclick="openModule('spelling')" style="
-                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
-                        color: white;
-                        border: none;
-                        padding: 16px 12px;
-                        border-radius: 12px;
-                        font-size: 15px;
-                        font-weight: 600;
-                        cursor: pointer;
-                        transition: transform 0.2s, box-shadow 0.2s;
-                        text-align: center;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        gap: 6px;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
-                        <span style="font-size: 24px;">✏️</span>
-                        <span>Spelling</span>
-                    </button>
-                    <button class="activity-option-btn" onclick="openModule('reading')" style="
-                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
-                        color: white;
-                        border: none;
-                        padding: 16px 12px;
-                        border-radius: 12px;
-                        font-size: 15px;
-                        font-weight: 600;
-                        cursor: pointer;
-                        transition: transform 0.2s, box-shadow 0.2s;
-                        text-align: center;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        gap: 6px;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
-                        <span style="font-size: 24px;">📖</span>
-                        <span>Story Explorer</span>
-                    </button>
-                    <button class="activity-option-btn" onclick="openModule('memory')" style="
-                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
-                        color: white;
-                        border: none;
-                        padding: 16px 12px;
-                        border-radius: 12px;
-                        font-size: 15px;
-                        font-weight: 600;
-                        cursor: pointer;
-                        transition: transform 0.2s, box-shadow 0.2s;
-                        text-align: center;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        gap: 6px;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
-                        <span style="font-size: 24px;">🧠</span>
-                        <span>Memory Master</span>
-                    </button>
-                </div>
-                <div class="quick-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button class="action-btn" onclick="document.getElementById('progress').scrollIntoView({behavior: 'smooth'})" style="flex: 1; min-width: 120px;">
-                        📈 Progress
-                    </button>
-                    <button class="action-btn" onclick="toggleSettings()" style="flex: 1; min-width: 120px;">
-                        ⚙️ Settings
-                    </button>
-                </div>
-            </div>
-            <div class="support-widget">
                 <h3>📸 Object Recognition</h3>
                 <p>Upload an image to learn what objects are in it!</p>
-                
-                <!-- API Key Setup Section -->
-                <div class="api-key-section" id="apiKeySection">
-                    <div class="api-key-status" id="apiKeyStatus">
-                        <span class="status-icon">🔑</span>
-                        <span class="status-text" id="statusText">API Key: Not Set</span>
-                    </div>
-                    <div class="api-key-input-group" id="apiKeyInputGroup" style="display: none;">
-                        <input type="password" id="apiKeyInput" class="api-key-input" placeholder="Enter your OpenAI API key (sk-...)" autocomplete="off">
-                        <button class="api-key-btn" onclick="saveApiKey()">💾 Save Key</button>
-                    </div>
-                    <button class="tip-btn" id="toggleApiKeyBtn" onclick="toggleApiKeyInput()" style="width: 100%; margin-top: 12px;">
-                        🔑 Setup API Key
-                    </button>
-                    <div class="api-key-help">
-                        <details>
-                            <summary style="cursor: pointer; color: var(--primary-purple); font-weight: 600; margin-top: 12px; font-size: 14px;">
-                                📖 How to get your API key? (Click to expand)
-                            </summary>
-                            <div class="api-key-instructions">
-                                <ol style="margin: 12px 0; padding-left: 20px; font-size: 13px; line-height: 1.8; color: var(--dark-text);">
-                                    <li>Visit <a href="https://platform.openai.com/api-keys" target="_blank" style="color: var(--primary-purple);">platform.openai.com/api-keys</a></li>
-                                    <li>Sign in or create an OpenAI account</li>
-                                    <li>Click "Create new secret key"</li>
-                                    <li>Copy the key (it starts with "sk-")</li>
-                                    <li>Paste it in the input above and click "Save Key"</li>
-                                    <li>Your key is stored locally in your browser</li>
-                                </ol>
-                                <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 10px; border-radius: 6px; margin-top: 12px;">
-                                    <p style="font-size: 12px; color: #92400E; margin: 0; font-weight: 600;">
-                                        💳 Important: Billing Required
-                                    </p>
-                                    <p style="font-size: 11px; color: #78350F; margin: 6px 0 0 0;">
-                                        Vision API requires a paid OpenAI account with billing set up. Make sure you have:
-                                    </p>
-                                    <ul style="font-size: 11px; color: #78350F; margin: 6px 0 0 0; padding-left: 18px;">
-                                        <li>Added a payment method at <a href="https://platform.openai.com/account/billing" target="_blank" style="color: #B45309; font-weight: 600;">OpenAI Billing</a></li>
-                                        <li>Credits available in your account</li>
-                                        <li>Access to GPT-4o or GPT-4o-mini models</li>
-                                    </ul>
-                                </div>
-                                <p style="font-size: 12px; color: var(--light-text); margin-top: 8px;">
-                                    ⚠️ Your API key is stored only in your browser and never shared with us.
-                                </p>
-                            </div>
-                        </details>
-                    </div>
-                </div>
                 
                 <div class="image-upload-area" id="imageUploadArea">
                     <input type="file" id="imageUploadInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
@@ -3236,7 +3088,7 @@ function renderSupportFeatures(category) {
                 <h3>🎯 Choose Your Activity</h3>
                 <p>Select an activity optimized for visual learning with enhanced visual cues and captions.</p>
                 <div class="activity-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0;">
-                    <button class="activity-option-btn" onclick="openModule('reading')" style="
+                    <button class="activity-option-btn" onclick="openModule('stories')" style="
                         background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
                         color: white;
                         border: none;
@@ -3253,9 +3105,9 @@ function renderSupportFeatures(category) {
                         gap: 6px;
                         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
                     " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
-                        <span style="font-size: 28px;">📖</span>
-                        <span>Story Explorer</span>
-                        <span style="font-size: 12px; opacity: 0.9; font-weight: 400;">Visual stories with word highlighting</span>
+                        <span style="font-size: 28px;">🚀</span>
+                        <span>Story Creator</span>
+                        <span style="font-size: 12px; opacity: 0.9; font-weight: 400;">Create your own adventures with AI-powered story suggestions!</span>
                     </button>
                     <button class="activity-option-btn" onclick="openModule('spelling')" style="
                         background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
@@ -3290,43 +3142,22 @@ function renderSupportFeatures(category) {
                         <input type="text" id="deafChatInput" placeholder="Type your message..." aria-label="Chat message">
                         <button class="chat-send" id="deafChatSend">Send</button>
                     </div>
-                <p class="chat-hint">Powered by ChatGPT. Add <code>localStorage.setItem('${OPENAI_STORAGE_KEY}','sk-xxx')</code> to connect your key.</p>
+                <p class="chat-hint">Powered by Google Gemini AI. Fast and reliable responses!</p>
                 </div>
             </div>
         `,
         neurodiverse: `
-            <div class="support-widget" aria-label="Neurodiverse-friendly activities">
-                <h3>🎯 Choose Your Activity</h3>
-                <p>Select a calm, structured activity designed for neurodiverse learners with gentle pacing and extra support.</p>
+            <div class="support-widget" aria-label="Games and fun learning activities">
+                <h3>🎮 Games</h3>
+                <p style="margin-bottom: 16px; color: #4b5563; font-size: 15px;">Fun, engaging games that make learning an adventure! Challenge yourself and level up your skills while having a blast.</p>
                 <div class="activity-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0;">
-                    <button class="activity-option-btn" onclick="openModule('phonics')" style="
-                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
-                        color: white;
-                        border: none;
-                        padding: 18px 14px;
-                        border-radius: 12px;
-                        font-size: 15px;
-                        font-weight: 600;
-                        cursor: pointer;
-                        transition: transform 0.2s, box-shadow 0.2s;
-                        text-align: center;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        gap: 6px;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
-                        <span style="font-size: 28px;">🔤</span>
-                        <span>Phonics Fun</span>
-                        <span style="font-size: 12px; opacity: 0.9; font-weight: 400;">Gentle letter learning</span>
-                    </button>
                     <button class="activity-option-btn" onclick="openModule('memory')" style="
                         background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
                         color: white;
                         border: none;
-                        padding: 18px 14px;
+                        padding: 20px 16px;
                         border-radius: 12px;
-                        font-size: 15px;
+                        font-size: 16px;
                         font-weight: 600;
                         cursor: pointer;
                         transition: transform 0.2s, box-shadow 0.2s;
@@ -3334,25 +3165,35 @@ function renderSupportFeatures(category) {
                         display: flex;
                         flex-direction: column;
                         align-items: center;
-                        gap: 6px;
+                        gap: 8px;
                         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
                     " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
-                        <span style="font-size: 28px;">🧠</span>
-                        <span>Memory Master</span>
-                        <span style="font-size: 12px; opacity: 0.9; font-weight: 400;">Pattern recognition</span>
+                        <span style="font-size: 32px;">🧠</span>
+                        <span style="font-size: 18px;">Memory Master</span>
+                        <span style="font-size: 13px; opacity: 0.9; font-weight: 400;">Boost your memory with fun sequence games and pattern challenges!</span>
+                    </button>
+                    <button class="activity-option-btn" onclick="openModule('writing')" style="
+                        background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+                        color: white;
+                        border: none;
+                        padding: 20px 16px;
+                        border-radius: 12px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 8px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    " onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
+                        <span style="font-size: 32px;">🎨</span>
+                        <span style="font-size: 18px;">Writing Artist</span>
+                        <span style="font-size: 13px; opacity: 0.9; font-weight: 400;">Practice letter formation with guided tracing and creative drawing tools!</span>
                     </button>
                 </div>
-            </div>
-            <div class="support-widget" aria-label="Focus routine helper">
-                <h3>Focus Flow</h3>
-                <p>Short bursts with gentle prompts keep things calm and steady.</p>
-                <ol>
-                    <li>Breathe in for 4 beats</li>
-                    <li>Trace or tap for 60 seconds</li>
-                    <li>Celebrate, then repeat</li>
-                </ol>
-                <button class="focus-btn" id="focusFlowBtn">🧘 Start 3-minute flow</button>
-                <p id="focusStatus" role="status"></p>
             </div>
         `
     };
@@ -3364,7 +3205,6 @@ function renderSupportFeatures(category) {
             initImageUploadDragDrop();
             initPdfUploadDragDrop();
             initYouTubeTranscript();
-            updateApiKeyStatus();
         }, 100);
     }
 
@@ -3386,23 +3226,6 @@ function renderSupportFeatures(category) {
         initChatSupport();
     }
 
-    if (category === 'neurodiverse') {
-        const focusBtn = document.getElementById('focusFlowBtn');
-        const focusStatus = document.getElementById('focusStatus');
-        if (focusBtn && focusStatus) {
-            focusBtn.addEventListener('click', () => {
-                focusStatus.textContent = 'Starting calm pulse...';
-                playSound('click');
-                setTimeout(() => {
-                    focusStatus.textContent = 'Great! Keep tracing or tapping for 60 seconds.';
-                    playSound('success');
-                }, 1500);
-                setTimeout(() => {
-                    focusStatus.textContent = 'Nice work. Take a sip of water and restart if you feel ready.';
-                }, 4000);
-            });
-        }
-    }
 }
 
 function startVoiceGuide(message) {
@@ -3627,9 +3450,12 @@ window.addEventListener('load', () => {
     }
 
     syncSettingsUI();
-    selectSupportCategory('general', true);
+    // Don't auto-select any profile - let users choose
     initMotionCarousel();
     bootstrapAuth();
+    
+    // Initialize API key - auto-save if not already in localStorage
+    initializeApiKey();
     
     // Load default theme if no user is logged in
     // (User-specific theme will be loaded in unlockApp if user is logged in)
@@ -3827,6 +3653,8 @@ function updateUserUI(user) {
         }
     }
 }
+
+// Sign Language Generator removed
 
 function restoreSession() {
     const cached = localStorage.getItem(AUTH_STORAGE_KEY);

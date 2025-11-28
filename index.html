@@ -9,6 +9,28 @@
     <link rel="stylesheet" href="accessibility.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Three.js for 3D sign language animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="module">
+        // Wait for THREE to be available, then load GLTFLoader
+        function loadGLTFLoader() {
+            if (typeof window.THREE !== 'undefined') {
+                import('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js')
+                    .then((module) => {
+                        window.THREE.GLTFLoader = module.GLTFLoader;
+                        console.log('GLTFLoader loaded successfully');
+                        // Dispatch event when GLTFLoader is ready
+                        window.dispatchEvent(new CustomEvent('gltfLoaderReady'));
+                    })
+                    .catch((error) => {
+                        console.error('Failed to load GLTFLoader:', error);
+                    });
+            } else {
+                setTimeout(loadGLTFLoader, 50);
+            }
+        }
+        loadGLTFLoader();
+    </script>
 </head>
 <body class="auth-locked">
     <div id="authOverlay" class="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="authTitle">
@@ -47,7 +69,6 @@
                     <a href="#home" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Home</a>
                     <a href="#support" class="nav-item" role="menuitem" aria-describedby="keyboardHint" onclick="event.preventDefault(); startLearning();">Learn</a>
                     <a href="#progress" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Progress</a>
-                    <a href="#games" class="nav-item" role="menuitem" aria-describedby="keyboardHint" onclick="scrollToGames(event)">Games</a>
                     <a href="#parents" class="nav-item" role="menuitem" aria-describedby="keyboardHint" onclick="openParentsCommunity(event)">Parents</a>
                     <a href="#feedback" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Feedback</a>
                 </div>
@@ -164,7 +185,7 @@
             </div>
 
             <div class="support-grid">
-                <button class="support-card active" data-category="general" onclick="selectSupportCategory('general')">
+                <button class="support-card" data-category="general" onclick="selectSupportCategory('general')">
                     <div class="support-icon">🌈</div>
                     <div class="support-info">
                         <h3>General Learner</h3>
@@ -191,19 +212,23 @@
                 <button class="support-card" data-category="neurodiverse" onclick="selectSupportCategory('neurodiverse')">
                     <div class="support-icon">🧩</div>
                     <div class="support-info">
-                        <h3>Neurodiverse</h3>
-                        <p>Gentle pacing, extra hints, and distraction-free play.</p>
+                        <h3>Games</h3>
+                        <p>Fun, engaging games that make learning an adventure! Challenge yourself and level up your skills.</p>
                     </div>
                 </button>
             </div>
 
             <div class="support-message" id="categoryMessage">
-                General support mode active. Select another profile if needed.
+                Please select a support profile above to get started.
             </div>
 
             <div class="support-feature-panel" id="supportFeaturePanel" aria-live="polite">
-                <h3 class="feature-title">Adaptive Boosts</h3>
-                <p class="feature-description">Pick a profile above to unlock a focused helper.</p>
+                <div class="support-widget" style="text-align: center; padding: 40px 20px;">
+                    <h3 style="color: var(--primary-purple); margin-bottom: 16px;">👆 Choose Your Support Profile</h3>
+                    <p style="color: var(--light-text); font-size: 15px; line-height: 1.6;">
+                        Select a profile above to unlock personalized learning tools and features tailored to your needs!
+                    </p>
+                </div>
             </div>
         </section>
 
@@ -510,7 +535,7 @@
                     </div>
                     <div class="feedback-card-body">
                         <p class="feedback-card-description">
-                            Help us improve our accessibility features. Tell us how well the support profiles (Blind/Low Vision, Deaf/Hard of Hearing, Neurodiverse) work for you and what we can improve.
+                            Help us improve our accessibility features. Tell us how well the support profiles (Blind/Low Vision, Deaf/Hard of Hearing, Games) work for you and what we can improve.
                         </p>
                         <button class="feedback-btn" onclick="openFeedbackForm('accessibility')" aria-label="Open accessibility features feedback form">
                             📝 Open Feedback Form
