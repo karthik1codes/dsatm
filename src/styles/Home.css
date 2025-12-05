@@ -1,0 +1,17 @@
+/* Home page styles */
+/* Import base styles from globals.css */
+
+.home-page {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.main-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hero section styles will be imported from main styles.css */
+/* This file serves as a placeholder for modular CSS organization */
+
+

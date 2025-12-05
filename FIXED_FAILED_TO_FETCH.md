@@ -93,3 +93,4 @@ The server should run on http://localhost:3000
 **The error is now fixed!** Just make sure the backend server is running before trying to subscribe. 🚀
 
 
+

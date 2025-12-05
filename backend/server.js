@@ -92,6 +92,35 @@ function calculateEndDate(startDate, planType) {
     return start.toISOString();
 }
 
+// Helper function to generate receipt ID (max 40 characters for Razorpay)
+function generateReceiptId(userEmail, planType) {
+    if (!userEmail || !planType) {
+        // Fallback if userEmail or planType is missing
+        const fallback = `RCP_${Date.now().toString(36).slice(-12)}`;
+        return fallback.length > 40 ? fallback.substring(0, 40) : fallback;
+    }
+    
+    // Create a short hash from email (8 chars for more safety)
+    const emailHash = crypto.createHash('md5').update(userEmail).digest('hex').substring(0, 8);
+    const planCode = planType.substring(0, 3).toUpperCase(); // First 3 chars of plan type (MON or YEA)
+    
+    // Create a short timestamp (last 10 chars of base36 timestamp for uniqueness)
+    const timestamp = Date.now().toString(36).slice(-10);
+    
+    // Format: RCP_<plan>_<hash><timestamp>
+    // RCP_ (4) + MON (3) + _ (1) + hash (8) + timestamp (10) = 26 chars
+    // This is well under 40 chars limit
+    const receipt = `RCP_${planCode}_${emailHash}${timestamp}`;
+    
+    // Ensure it's exactly 40 characters or less (safety check)
+    const finalReceipt = receipt.length > 40 ? receipt.substring(0, 40) : receipt;
+    
+    // Log for debugging
+    console.log(`Generated receipt: ${finalReceipt} (length: ${finalReceipt.length})`);
+    
+    return finalReceipt;
+}
+
 // API Routes
 
 // Health check
@@ -115,10 +144,22 @@ app.post('/api/subscription/create-order', async (req, res) => {
         }
 
         // Create Razorpay order
+        // Generate receipt ID (must be max 40 characters)
+        const receiptId = generateReceiptId(userEmail, plan);
+        
+        // Validate receipt length before creating order
+        if (receiptId.length > 40) {
+            console.error('❌ Receipt ID too long:', receiptId, 'Length:', receiptId.length);
+            return res.status(500).json({ 
+                error: 'Internal error: Receipt ID generation failed',
+                details: `Receipt length ${receiptId.length} exceeds 40 characters`
+            });
+        }
+        
         const options = {
             amount: amount,
             currency: currency || 'INR',
-            receipt: `receipt_${Date.now()}_${userEmail}`,
+            receipt: receiptId,
             notes: {
                 plan: plan,
                 user_email: userEmail,
@@ -129,7 +170,8 @@ app.post('/api/subscription/create-order', async (req, res) => {
         console.log('Creating Razorpay order with options:', {
             amount: options.amount,
             currency: options.currency,
-            receipt: options.receipt
+            receipt: options.receipt,
+            receiptLength: options.receipt.length
         });
 
         const order = await razorpay.orders.create(options);
@@ -195,9 +237,14 @@ app.post('/api/subscription/verify-payment', (req, res) => {
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature, plan, userEmail } = req.body;
 
         // Verify the payment signature
+        const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+        if (!razorpaySecret) {
+            return res.status(500).json({ error: 'Razorpay secret key not configured' });
+        }
+        
         const text = `${razorpay_order_id}|${razorpay_payment_id}`;
         const generated_signature = crypto
-            .createHmac('sha256', razorpay.key_secret)
+            .createHmac('sha256', razorpaySecret)
             .update(text)
             .digest('hex');
 

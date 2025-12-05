@@ -395,6 +395,11 @@
 
                 console.log('✅ Order created successfully:', orderData.orderId);
 
+                // Check if Razorpay is loaded
+                if (typeof Razorpay === 'undefined') {
+                    throw new Error('Razorpay SDK not loaded. Please check your internet connection and refresh the page.');
+                }
+
                 // Initialize Razorpay checkout
                 const options = {
                     key: RAZORPAY_KEY_ID,
@@ -413,19 +418,60 @@
                     },
                     handler: function(response) {
                         // Payment successful
+                        console.log('Payment successful:', response);
                         handlePaymentSuccess(response, planType);
                     },
                     modal: {
                         ondismiss: function() {
                             // Payment cancelled
+                            console.log('Payment modal dismissed');
                             enableButtons();
                             showError('Payment was cancelled');
+                        }
+                    },
+                    config: {
+                        display: {
+                            blocks: {
+                                banks: {
+                                    name: 'All payment methods',
+                                    instruments: [
+                                        {
+                                            method: 'card'
+                                        },
+                                        {
+                                            method: 'netbanking'
+                                        },
+                                        {
+                                            method: 'wallet'
+                                        },
+                                        {
+                                            method: 'upi'
+                                        }
+                                    ]
+                                }
+                            },
+                            sequence: ['block.banks'],
+                            preferences: {
+                                show_default_blocks: true
+                            }
                         }
                     }
                 };
 
-                const razorpay = new Razorpay(options);
-                razorpay.open();
+                try {
+                    console.log('Opening Razorpay checkout with order ID:', orderData.orderId);
+                    const razorpay = new Razorpay(options);
+                    razorpay.on('payment.failed', function(response) {
+                        console.error('Payment failed:', response.error);
+                        enableButtons();
+                        showError('Payment failed: ' + (response.error.description || response.error.reason || 'Unknown error'));
+                    });
+                    razorpay.open();
+                    console.log('✅ Razorpay checkout opened successfully');
+                } catch (razorpayError) {
+                    console.error('Error opening Razorpay checkout:', razorpayError);
+                    throw new Error('Failed to open payment gateway: ' + (razorpayError.message || 'Unknown error'));
+                }
 
             } catch (error) {
                 console.error('Payment initiation error:', error);

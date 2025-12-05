@@ -13,6 +13,7 @@ echo.
 
 REM Start backend server in a new window
 echo Starting Backend Server...
+cd /d "%~dp0"
 start "BrightWords Backend" cmd /k "cd /d %~dp0backend && node server.js"
 
 REM Wait a moment for backend to start

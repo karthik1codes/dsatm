@@ -1,0 +1,12 @@
+/* Navigation styles will be imported from main styles.css */
+/* This file serves as a placeholder for modular CSS organization */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+
