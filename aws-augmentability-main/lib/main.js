@@ -38,9 +38,9 @@ aws_amplify.Amplify.Auth.currentAuthenticatedUser().then(user => {
             } else {
                 window.location.replace("/index-landing.html");
             }
-        } else if (currentPath.includes("aws-augmentability-main/index.html") || 
-                   currentPath.endsWith("/aws-augmentability-main/index.html") ||
-                   currentUrl.includes("aws-augmentability-main/index.html")) {
+        } else if (currentPath.includes("aws-augmentability-main/index-landing.html") || 
+                   currentPath.endsWith("/aws-augmentability-main/index-landing.html") ||
+                   currentUrl.includes("aws-augmentability-main/index-landing.html")) {
             // If on AWS AugmentAbility login page, redirect to landing page
             console.log('User already authenticated, redirecting from login to landing page');
             window.location.replace("/aws-augmentability-main/index-landing.html");

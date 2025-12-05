@@ -15,7 +15,7 @@ export default defineConfig({
         // Handle /superpower route - redirect to the login page
         if (req.url === '/superpower' || req.url === '/superpower/') {
           res.writeHead(302, {
-            'Location': '/aws-augmentability-main/index.html'
+            'Location': '/aws-augmentability-main/index-landing.html'
           })
           res.end()
           return
