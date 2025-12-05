@@ -386,6 +386,116 @@ body.authenticated .auth-overlay {
     text-align: center;
 }
 
+/* For Any Queries Section */
+.queries-section {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    width: 100%;
+    max-width: 600px;
+}
+
+.queries-title {
+    font-family: 'Fredoka', cursive;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--primary-purple);
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.social-icons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.social-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.social-icon:hover {
+    transform: translateY(-4px) scale(1.1);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+.social-icon:focus {
+    outline: 3px solid rgba(139, 92, 246, 0.3);
+    outline-offset: 2px;
+}
+
+.social-icon svg {
+    width: 32px;
+    height: 32px;
+    transition: transform 0.3s ease;
+}
+
+.social-icon:hover svg {
+    transform: scale(1.1);
+}
+
+.gmail-icon:hover {
+    background: #EA4335;
+}
+
+.gmail-icon:hover svg path {
+    fill: white;
+}
+
+.instagram-icon:hover {
+    background: #E4405F;
+}
+
+.instagram-icon:hover svg path {
+    fill: white;
+}
+
+.facebook-icon:hover {
+    background: #1877F2;
+}
+
+.facebook-icon:hover svg path {
+    fill: white;
+}
+
+@media (max-width: 768px) {
+    .queries-section {
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+    }
+    
+    .queries-title {
+        font-size: 18px;
+        margin-bottom: 14px;
+    }
+    
+    .social-icons {
+        gap: 20px;
+    }
+    
+    .social-icon {
+        width: 44px;
+        height: 44px;
+    }
+    
+    .social-icon svg {
+        width: 28px;
+        height: 28px;
+    }
+}
+
 /* Animated Background Elements */
 .bg-decoration {
     position: fixed;

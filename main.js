@@ -2416,9 +2416,18 @@ function trackModuleCompletion(moduleName) {
     updateProgressUI();
 }
 
-// Sign Language navigation - redirects to separate page
+// Sign Language navigation - uses React Router route
 function openSignLanguage() {
-    window.location.href = 'sign-language.html';
+    // Use React Router route instead of standalone HTML
+    // If we're in an iframe, try to use parent's React Router navigation
+    if (window.parent && window.parent !== window && window.parent.__reactRouterNavigate) {
+        window.parent.__reactRouterNavigate('/sign-language');
+    } else if (window.__reactRouterNavigate) {
+        window.__reactRouterNavigate('/sign-language');
+    } else {
+        // Fallback: use window.location but with React Router route
+        window.location.href = '/sign-language';
+    }
     playSound('click');
 }
 

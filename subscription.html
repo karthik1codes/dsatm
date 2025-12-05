@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subscribe - Sign Language Feature</title>
+    <script>
+        // Redirect to React Router route immediately
+        // This ensures users always use the React Router version
+        if (window.location.pathname === '/subscription.html' || window.location.pathname.endsWith('/subscription.html')) {
+            window.location.replace('/subscription');
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -329,7 +336,7 @@
             </div>
 
             <div class="back-link">
-                <a href="index.html#home">← Back to Home</a>
+                <a href="/">← Back to Home</a>
             </div>
         </div>
     </div>
@@ -391,19 +398,29 @@
         }
 
         async function initiatePayment(planType) {
+            console.log('🔄 Initiating payment for plan:', planType);
+            
             const plan = plans[planType];
             if (!plan) {
-                showError('Invalid plan selected');
+                console.error('❌ Invalid plan selected:', planType);
+                showError('Invalid plan selected. Please try again.');
                 return;
             }
 
+            console.log('✅ Plan found:', plan.name, 'Amount:', plan.amount);
+
             // Get user info
             const user = getUserInfo();
-            if (!user) {
-                showError('Please login first');
-                window.location.href = 'index.html#home';
+            if (!user || !user.email) {
+                console.error('❌ User not authenticated');
+                showError('Error: Authentication failed. Please login first to subscribe.');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
                 return;
             }
+
+            console.log('✅ User authenticated:', user.email);
 
             // Disable buttons
             document.querySelectorAll('.subscribe-button').forEach(btn => {
@@ -463,10 +480,20 @@
 
                 console.log('✅ Order created successfully:', orderData.orderId);
 
+                // Wait for Razorpay SDK to be available (with retry)
+                let retryCount = 0;
+                const maxRetries = 15;
+                while (typeof Razorpay === 'undefined' && retryCount < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    retryCount++;
+                }
+
                 // Check if Razorpay is loaded
                 if (typeof Razorpay === 'undefined') {
                     throw new Error('Razorpay SDK not loaded. Please check your internet connection and refresh the page.');
                 }
+
+                console.log('✅ Razorpay SDK is ready, opening payment gateway...');
 
                 // Initialize Razorpay checkout
                 const options = {
@@ -527,18 +554,31 @@
                 };
 
                 try {
-                    console.log('Opening Razorpay checkout with order ID:', orderData.orderId);
+                    console.log('🚀 Opening Razorpay checkout with order ID:', orderData.orderId);
                     const razorpay = new Razorpay(options);
+                    
                     razorpay.on('payment.failed', function(response) {
-                        console.error('Payment failed:', response.error);
+                        console.error('❌ Payment failed:', response.error);
                         enableButtons();
-                        showError('Payment failed: ' + (response.error.description || response.error.reason || 'Unknown error'));
+                        showError('Payment failed: ' + (response.error?.description || response.error?.reason || 'Unknown error'));
                     });
+
+                    // Ensure the popup opens
                     razorpay.open();
                     console.log('✅ Razorpay checkout opened successfully');
+                    
+                    // Verify popup opened (check after a short delay)
+                    setTimeout(() => {
+                        // Check if Razorpay modal is visible
+                        const razorpayModal = document.querySelector('.razorpay-container, iframe[src*="razorpay"]');
+                        if (!razorpayModal) {
+                            console.warn('⚠️ Razorpay modal may not have opened. Check popup blocker settings.');
+                        }
+                    }, 500);
                 } catch (razorpayError) {
-                    console.error('Error opening Razorpay checkout:', razorpayError);
-                    throw new Error('Failed to open payment gateway: ' + (razorpayError.message || 'Unknown error'));
+                    console.error('❌ Error opening Razorpay checkout:', razorpayError);
+                    enableButtons();
+                    throw new Error('Failed to open payment gateway: ' + (razorpayError.message || 'Unknown error') + '. Please check if popup blockers are enabled.');
                 }
 
             } catch (error) {
@@ -597,9 +637,9 @@
                 // Show success message
                 showSuccess('Payment successful! Your subscription is now active. Redirecting...');
 
-                // Redirect to sign language page after 2 seconds
+                // Redirect to sign language page after 2 seconds using React Router route
                 setTimeout(() => {
-                    window.location.href = 'sign-language.html';
+                    window.location.href = '/sign-language';
                 }, 2000);
 
             } catch (error) {
@@ -617,16 +657,25 @@
                     if (parsed?.credential) {
                         // Decode JWT to get user info
                         const tokenData = decodeJWT(parsed.credential);
-                        return {
-                            email: tokenData.email,
-                            name: tokenData.name,
-                            given_name: tokenData.given_name,
-                            picture: tokenData.picture
-                        };
+                        if (tokenData && tokenData.email) {
+                            console.log('✅ User info retrieved:', tokenData.email);
+                            return {
+                                email: tokenData.email,
+                                name: tokenData.name || tokenData.given_name || '',
+                                given_name: tokenData.given_name || '',
+                                picture: tokenData.picture || ''
+                            };
+                        } else {
+                            console.error('❌ Invalid token data - no email found');
+                        }
+                    } else {
+                        console.error('❌ No credential found in cached user data');
                     }
+                } else {
+                    console.warn('⚠️ No user data found in localStorage');
                 }
             } catch (error) {
-                console.error('Error getting user info:', error);
+                console.error('❌ Error getting user info:', error);
             }
             return null;
         }
@@ -696,11 +745,22 @@
 
         // Check backend connectivity and subscription status on page load
         window.addEventListener('DOMContentLoaded', async function() {
+            // Check authentication first
+            const user = getUserInfo();
+            if (!user || !user.email) {
+                showError('Error: Authentication failed. Please login first to subscribe.');
+                // Redirect to home (React Router route) after 3 seconds
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 3000);
+                return;
+            }
+
             // Check if already subscribed
             const subscription = getSubscriptionStatus();
             if (subscription && subscription.status === 'active' && new Date(subscription.endDate) > new Date()) {
-                // Already subscribed and active
-                window.location.href = 'sign-language.html';
+                // Already subscribed and active - redirect to React Router route
+                window.location.href = '/sign-language';
                 return;
             }
 
@@ -716,6 +776,24 @@
             } catch (error) {
                 console.warn('⚠️ Backend server check failed:', error);
                 // Don't show error on page load, only show when user tries to subscribe
+            }
+
+            // Ensure Razorpay script is loaded
+            if (typeof Razorpay === 'undefined') {
+                console.log('Loading Razorpay SDK...');
+                const script = document.createElement('script');
+                script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                script.async = true;
+                script.onload = () => {
+                    console.log('✅ Razorpay SDK loaded successfully');
+                };
+                script.onerror = () => {
+                    console.error('❌ Failed to load Razorpay SDK');
+                    showError('Failed to load payment gateway. Please check your internet connection and refresh the page.');
+                };
+                document.body.appendChild(script);
+            } else {
+                console.log('✅ Razorpay SDK already loaded');
             }
         });
 

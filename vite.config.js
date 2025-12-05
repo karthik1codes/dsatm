@@ -3,8 +3,53 @@ import react from '@vitejs/plugin-react'
 import fs from 'fs'
 import path from 'path'
 
+// Plugin to copy static folders to dist
+function copyStaticFoldersPlugin() {
+  return {
+    name: 'copy-static-folders',
+    writeBundle() {
+      const foldersToCopy = ['aws-augmentability-main', 'assets', 'signtranslator']
+      
+      // Copy directory recursively
+      function copyRecursive(src, dest) {
+        if (!fs.existsSync(src)) return
+        
+        if (!fs.existsSync(dest)) {
+          fs.mkdirSync(dest, { recursive: true })
+        }
+        
+        const entries = fs.readdirSync(src, { withFileTypes: true })
+        
+        for (const entry of entries) {
+          const srcPath = path.join(src, entry.name)
+          const destPath = path.join(dest, entry.name)
+          
+          if (entry.isDirectory()) {
+            // Skip node_modules and dist
+            if (entry.name === 'node_modules' || entry.name === 'dist') continue
+            copyRecursive(srcPath, destPath)
+          } else {
+            fs.copyFileSync(srcPath, destPath)
+          }
+        }
+      }
+      
+      // Copy each folder
+      foldersToCopy.forEach(folder => {
+        const srcDir = path.resolve(__dirname, folder)
+        const destDir = path.resolve(__dirname, `dist/${folder}`)
+        
+        if (fs.existsSync(srcDir)) {
+          copyRecursive(srcDir, destDir)
+          console.log(`✓ Copied ${folder} to dist`)
+        }
+      })
+    }
+  }
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), copyStaticFoldersPlugin()],
   server: {
     port: 8000,
     host: '0.0.0.0', // Listen on all network interfaces (IPv4 and IPv6)
@@ -62,7 +107,13 @@ export default defineConfig({
       input: {
         main: './index-react.html'
       }
-    }
+    },
+    // Copy static assets to dist
+    copyPublicDir: true,
+    // Ensure proper handling of static files
+    assetsDir: 'assets',
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 1000
   }
 })
 

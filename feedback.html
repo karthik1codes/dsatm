@@ -204,11 +204,11 @@
     <div class="feedback-page">
         <!-- Navigation Bar -->
         <nav class="feedback-nav">
-            <a href="index.html#home" class="feedback-nav-brand" id="feedbackNavBrand">
+            <a href="/" class="feedback-nav-brand" id="feedbackNavBrand">
                 <div class="feedback-nav-logo">✨</div>
                 <span class="feedback-nav-title">BrightWords</span>
             </a>
-            <a href="index.html#home" class="feedback-back-btn" id="feedbackBackBtn">
+            <a href="/" class="feedback-back-btn" id="feedbackBackBtn">
                 ← Back to Home
             </a>
         </nav>
@@ -307,6 +307,12 @@
     </div>
 
     <script>
+        // Redirect to React Router route immediately
+        // This ensures users always use the React Router version
+        if (window.location.pathname === '/feedback.html' || window.location.pathname.endsWith('/feedback.html')) {
+            window.location.replace('/feedback');
+        }
+
         // Feedback Form URLs
         const feedbackForms = {
             'overall': 'https://forms.gle/gaCtLrhYftNxYFyN6',
@@ -335,8 +341,8 @@
                 if (e) {
                     e.preventDefault();
                 }
-                // Navigate to home section - auth check in index.html will handle unlocking
-                window.location.href = 'index.html#home';
+                // Navigate to React Router home route instead of index.html
+                window.location.href = '/';
             }
             
             if (backBtn) {

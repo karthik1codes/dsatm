@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Language - BrightWords</title>
+    <script>
+        // Redirect to React Router route immediately
+        // This ensures users always use the React Router version
+        if (window.location.pathname === '/sign-language.html' || window.location.pathname.endsWith('/sign-language.html')) {
+            window.location.replace('/sign-language');
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <style>
@@ -307,11 +314,13 @@
         }
 
         function goToSubscription() {
-            window.location.href = 'subscription.html';
+            // Use React Router route instead of standalone HTML
+            window.location.href = '/subscription';
         }
 
         function goToHome() {
-            window.location.href = 'index.html#home';
+            // Use React Router route instead of index.html
+            window.location.href = '/';
         }
 
         function loadSignLanguageFeature() {
@@ -346,9 +355,9 @@
             }
         });
 
-        // Function to navigate to home page
+        // Function to navigate to home page using React Router route
         function navigateToHome() {
-            window.location.href = 'index.html#home';
+            window.location.href = '/';
         }
     </script>
 </body>
