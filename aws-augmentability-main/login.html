@@ -134,6 +134,8 @@
       }
       
       function checkCurrentUser() {
+        // Always show the login page, don't auto-redirect authenticated users
+        // This allows users to sign in again or switch accounts
         if (!window.aws_amplify || !aws_amplify.Amplify || !aws_amplify.Amplify.Auth) {
           setTimeout(checkCurrentUser, 200);
           return;
@@ -141,10 +143,8 @@
         aws_amplify.Amplify.configure(amplifyConfig);
         aws_amplify.Amplify.Auth.currentAuthenticatedUser()
           .then(() => {
-            updateLoginStatus('Already signed in. Redirecting...');
-            setTimeout(() => {
-              window.location.href = '/aws-augmentability-main/index-landing.html';
-            }, 500);
+            // User is authenticated, but don't redirect - let them sign in again if needed
+            updateLoginStatus('You are already signed in. Click the button to sign in with a different account or continue.');
           })
           .catch(() => {
             updateLoginStatus('Click the button above to sign in with AWS Cognito.');

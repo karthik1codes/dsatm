@@ -12,10 +12,10 @@ export default defineConfig({
     // Configure middleware to handle redirect and CSP headers
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        // Handle /superpower route - redirect to AWS Cognito Hosted UI
+        // Handle /superpower route - redirect to the login page
         if (req.url === '/superpower' || req.url === '/superpower/') {
           res.writeHead(302, {
-            'Location': 'https://56hp9p2g0mto0006dtg7vv5fac.auth.eu-west-1.amazoncognito.com/login?client_id=56hp9p2g0mto0006dtg7vv5fac&redirect_uri=http%3A%2F%2Flocalhost%3A8001%2Faws-augmentability-main%2Findex-landing.html&response_type=code&scope=email%20openid'
+            'Location': '/aws-augmentability-main/login.html'
           })
           res.end()
           return

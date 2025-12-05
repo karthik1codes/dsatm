@@ -173,7 +173,7 @@
                     <a href="sign-language.html" class="nav-item" role="menuitem" aria-describedby="keyboardHint" title="Sign Language Learning">Sign Language</a>
                     <a href="#parents" class="nav-item" role="menuitem" aria-describedby="keyboardHint" onclick="openParentsCommunity(event)">Parents</a>
                     <a href="feedback.html" class="nav-item" role="menuitem" aria-describedby="keyboardHint" id="feedback-link">Feedback</a>
-                    <a href="https://56hp9p2g0mto0006dtg7vv5fac.auth.eu-west-1.amazoncognito.com/login?client_id=56hp9p2g0mto0006dtg7vv5fac&redirect_uri=http%3A%2F%2Flocalhost%3A8001%2Faws-augmentability-main%2Findex-landing.html&response_type=code&scope=email%20openid" class="nav-item superpower-link-bypass" role="menuitem" aria-describedby="keyboardHint" title="SuperPower - AWS AugmentAbility features" id="superpower-link">SuperPower</a>
+                    <a href="/aws-augmentability-main/login.html" class="nav-item superpower-link-bypass" role="menuitem" aria-describedby="keyboardHint" title="SuperPower - AWS AugmentAbility features" id="superpower-link">SuperPower</a>
                 </div>
 
                 <div class="user-section" aria-label="User quick actions">
@@ -463,8 +463,8 @@
                         newLink.addEventListener('click', function(e) {
                             e.preventDefault();
                             e.stopPropagation();
-                            // Redirect in same window to AWS Cognito Hosted UI
-                            window.location.href = 'https://56hp9p2g0mto0006dtg7vv5fac.auth.eu-west-1.amazoncognito.com/login?client_id=56hp9p2g0mto0006dtg7vv5fac&redirect_uri=http%3A%2F%2Flocalhost%3A8001%2Faws-augmentability-main%2Findex-landing.html&response_type=code&scope=email%20openid';
+                            // Redirect in same window to SuperPower login page
+                            window.location.href = '/aws-augmentability-main/login.html';
                             return false;
                         });
                         

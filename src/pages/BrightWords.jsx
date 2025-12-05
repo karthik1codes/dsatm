@@ -64,20 +64,19 @@ function BrightWords() {
                 const newLink = superPowerLink.cloneNode(true)
                 superPowerLink.parentNode.replaceChild(newLink, superPowerLink)
                 
-              newLink.addEventListener('click', (e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                e.stopImmediatePropagation()
-                console.log('SuperPower link clicked, navigating to Cognito Hosted UI...')
-                
-                // Navigate directly to AWS Cognito Hosted UI
-                const cognitoUrl = 'https://56hp9p2g0mto0006dtg7vv5fac.auth.eu-west-1.amazoncognito.com/login?client_id=56hp9p2g0mto0006dtg7vv5fac&redirect_uri=http%3A%2F%2Flocalhost%3A8001%2Faws-augmentability-main%2Findex-landing.html&response_type=code&scope=email%20openid'
-                if (window.top && window.top !== window.self) {
-                  window.top.location.href = cognitoUrl
-                } else {
-                  window.location.href = cognitoUrl
-                }
-              })
+                newLink.addEventListener('click', (e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  e.stopImmediatePropagation()
+                  console.log('SuperPower link clicked, navigating to login...')
+                  
+                  // Navigate to SuperPower login page (which will redirect to landing after auth)
+                  if (window.top && window.top !== window.self) {
+                    window.top.location.href = '/aws-augmentability-main/login.html'
+                  } else {
+                    window.location.href = '/aws-augmentability-main/login.html'
+                  }
+                })
                 
                 console.log('Navigation handler attached to SuperPower link')
               }
