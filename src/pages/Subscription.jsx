@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from '../context/AuthContext'
 import { useAnnouncement } from '../hooks/useAnnouncement'
 import '../styles/Subscription.css'
 
@@ -89,7 +89,7 @@ const Subscription = () => {
     const user = getUserInfo()
     if (!user) {
       setErrorMessage('Please login first')
-      navigate('/')
+      navigate('/login', { replace: true })
       return
     }
 
@@ -344,7 +344,7 @@ const Subscription = () => {
         </div>
 
         <div className="back-link">
-          <Link to="/home" aria-label="Back to home page">
+          <Link to="/" aria-label="Back to home page">
             ← Back to Home
           </Link>
         </div>
