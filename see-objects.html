@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help me see around - BrightWords</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="accessibility.css">
+    <script src="https://kit.fontawesome.com/692060e681.js" crossorigin="anonymous"></script>
+</head>
+<body class="authenticated">
+    <!-- Navigation Header -->
+    <header class="site-header" role="banner">
+        <nav class="nav-header" role="navigation" aria-label="Primary navigation">
+            <div class="logo" aria-label="BrightWords home">
+                <div class="logo-icon" aria-hidden="true">✨</div>
+                <span>BrightWords</span>
+            </div>
+            
+            <div class="nav-menu" role="menubar" aria-label="Primary menu">
+                <a href="index.html#home" class="nav-item" role="menuitem">Home</a>
+                <a href="index.html#support" class="nav-item" role="menuitem">Learn</a>
+                <a href="index.html#progress" class="nav-item" role="menuitem">Progress</a>
+                <a href="index.html#games" class="nav-item" role="menuitem">Games</a>
+                <a href="index.html#parents" class="nav-item" role="menuitem">Parents</a>
+                <a href="index.html#feedback" class="nav-item" role="menuitem">Feedback</a>
+                <a href="see-objects.html" class="nav-item active" role="menuitem">🦮 See Around</a>
+            </div>
+
+            <div class="user-section" aria-label="User quick actions">
+                <div class="avatar" role="button" tabindex="0" aria-label="Open settings" onclick="window.location.href='index.html#settings'">
+                    👤
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main id="mainContent" role="main" style="padding: 2rem; max-width: 900px; margin: 0 auto;">
+        <a href="index.html" title="Back to home" style="color: #8B5CF6; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 2rem; font-size: 16px; font-weight: 600; transition: all 0.3s;" onmouseover="this.style.color='#EC4899'" onmouseout="this.style.color='#8B5CF6'">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+
+        <div class="module-card" style="max-width: 700px; margin: 0 auto;">
+            <div class="module-header">
+                <div class="module-icon-wrapper module-icon-purple">
+                    <span style="font-size: 48px;">🦮</span>
+                </div>
+                <div class="module-info">
+                    <h2 class="module-title" style="font-size: 32px; margin: 0;">Help me see around</h2>
+                    <span class="module-level">AI Object Detection</span>
+                </div>
+            </div>
+
+            <p class="module-description" style="text-align: center; margin: 2rem 0;">
+                After selecting a language below, get ready to take a picture and the app will describe the objects around you. Don't forget to turn up the volume!
+            </p>
+
+            <div style="max-width: 450px; margin: 2rem auto;">
+                <label for="language" style="display: block; margin-bottom: 0.75rem; color: #1F2937; font-weight: 600; font-size: 18px; text-align: center;">
+                    Select Language:
+                </label>
+                <select 
+                    id="language" 
+                    style="width: 100%; padding: 14px 18px; border-radius: 12px; border: 2px solid #E5E7EB; font-size: 16px; font-family: 'Nunito', sans-serif; background: white; cursor: pointer; transition: all 0.3s; outline: none;"
+                    onchange="handleLanguageSelection(this.value)"
+                    onfocus="this.style.borderColor='#8B5CF6'; this.style.boxShadow='0 0 0 3px rgba(139, 92, 246, 0.1)'"
+                    onblur="this.style.borderColor='#E5E7EB'; this.style.boxShadow='none'"
+                    aria-label="Select language for object detection">
+                    <option value="" selected disabled>Select a language</option>
+                    <option value="arb">Arabic</option>
+                    <option value="en">English</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="ru">Russian</option>
+                    <option value="es">Spanish</option>
+                </select>
+            </div>
+
+            <div id="objectDetectionArea" style="display: none; text-align: center; margin-top: 2rem; padding: 1rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(139, 92, 246, 0.1)); border-radius: 12px;">
+                <p style="color: #10B981; font-weight: 600; font-size: 16px;">
+                    <i class="fas fa-spinner fa-spin"></i> Redirecting to object detection...
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script src="main.js"></script>
+    <script>
+        function handleLanguageSelection(language) {
+            if (language) {
+                // Show loading message
+                const detectionArea = document.getElementById('objectDetectionArea');
+                detectionArea.style.display = 'block';
+                
+                // Play sound effect if available
+                if (typeof playSound === 'function') {
+                    playSound('click');
+                }
+                
+                // Redirect to the AWS AugmentAbility object detection page with language parameter
+                setTimeout(() => {
+                    window.location.href = `aws-augmentability-main/f-see-objects.html?language=${language}`;
+                }, 500);
+            }
+        }
+        
+        // Add keyboard accessibility
+        document.getElementById('language').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && this.value) {
+                handleLanguageSelection(this.value);
+            }
+        });
+    </script>
+</body>
+</html>
+
+
