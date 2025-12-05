@@ -148,10 +148,10 @@ const Home = () => {
           <section className="hero-section" id="home" aria-label="Welcome section">
             <div className="hero-content">
               <h1 className="hero-title">
-                BrightWords makes learning feel bold, fast, and joyful.
+                Reimagining learning for specially-abled children through AI-powered personalization.
               </h1>
               <p className="hero-description">
-                AI-powered personalized learning support for Children who are specially abled. Build confidence through interactive games, multisensory activities, and real-time feedback!
+                Interactive games, multisensory activities, and real-time adaptive feedback come together to build confidence, accelerate growth, and create a supportive learning journey tailored to every child.
               </p>
               <ul className="hero-highlights" aria-label="Key benefits">
                 <li>⚡ 5-minute missions</li>
