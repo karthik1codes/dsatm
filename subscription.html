@@ -216,6 +216,18 @@
             font-size: 14px;
         }
 
+        .plan-section {
+            margin-top: 32px;
+        }
+
+        .plan-section-title {
+            font-family: 'Fredoka', cursive;
+            font-size: clamp(20px, 4vw, 26px);
+            font-weight: 700;
+            color: #1F2937;
+            margin: 0 0 12px 0;
+        }
+
         @media (max-width: 768px) {
             .subscription-container {
                 padding: 30px 20px;
@@ -243,37 +255,76 @@
             <div id="successMessage" class="success-message"></div>
             <div id="errorMessage" class="error-message"></div>
 
-            <div class="plans-grid">
-                <div class="plan-card" data-plan="monthly">
-                    <div class="plan-name">Monthly Plan</div>
-                    <div class="plan-price">₹299<span>/month</span></div>
-                    <div class="plan-period">Billed monthly</div>
-                    <ul class="plan-features">
-                        <li>Unlimited sign language conversions</li>
-                        <li>Access to all 3D avatar animations</li>
-                        <li>Learn sign language alphabets & words</li>
-                        <li>Create sign language videos</li>
-                        <li>Priority support</li>
-                    </ul>
-                    <button class="subscribe-button" onclick="selectPlan('monthly')">
-                        Subscribe Monthly
-                    </button>
-                </div>
+            <div class="plan-section">
+                <h2 class="plan-section-title">Individual Plans</h2>
+                <div class="plans-grid">
+                    <div class="plan-card selected" data-plan="monthly">
+                        <div class="plan-name">Individual Monthly</div>
+                        <div class="plan-price">₹99<span>/month</span></div>
+                        <div class="plan-period">Billed monthly</div>
+                        <ul class="plan-features">
+                            <li>Unlimited sign language conversions</li>
+                            <li>Access to all 3D avatar animations</li>
+                            <li>Learn sign language alphabets & words</li>
+                            <li>Create sign language videos</li>
+                            <li>Priority support</li>
+                        </ul>
+                        <button class="subscribe-button" onclick="selectPlan('monthly')">
+                            Subscribe Monthly
+                        </button>
+                    </div>
 
-                <div class="plan-card popular selected" data-plan="yearly">
-                    <div class="plan-name">Yearly Plan</div>
-                    <div class="plan-price">₹2,999<span>/year</span></div>
-                    <div class="plan-period">Save 16% - Billed annually</div>
-                    <ul class="plan-features">
-                        <li>Everything in Monthly Plan</li>
-                        <li>Save ₹589 compared to monthly</li>
-                        <li>Best value for long-term learning</li>
-                        <li>Early access to new features</li>
-                        <li>24/7 priority support</li>
-                    </ul>
-                    <button class="subscribe-button" onclick="selectPlan('yearly')">
-                        Subscribe Yearly
-                    </button>
+                    <div class="plan-card popular selected" data-plan="yearly">
+                        <div class="plan-name">Individual Yearly</div>
+                        <div class="plan-price">₹1,188<span>/year</span></div>
+                        <div class="plan-period">Billed annually</div>
+                        <ul class="plan-features">
+                            <li>Everything in Monthly Plan</li>
+                            <li>Same as ₹99/month × 12 months</li>
+                            <li>Best value for long-term learning</li>
+                            <li>Early access to new features</li>
+                            <li>24/7 priority support</li>
+                        </ul>
+                        <button class="subscribe-button" onclick="selectPlan('yearly')">
+                            Subscribe Yearly
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="plan-section">
+                <h2 class="plan-section-title">Team Plans</h2>
+                <div class="plans-grid">
+                    <div class="plan-card" data-plan="team_monthly">
+                        <div class="plan-name">Team Monthly</div>
+                        <div class="plan-price">₹1,500<span>/month</span></div>
+                        <div class="plan-period">Billed monthly</div>
+                        <ul class="plan-features">
+                            <li>All Individual plan benefits</li>
+                            <li>Multi-seat team access</li>
+                            <li>Shared progress & reporting</li>
+                            <li>Priority onboarding & support</li>
+                        </ul>
+                        <button class="subscribe-button" onclick="selectPlan('team_monthly')">
+                            Subscribe Monthly
+                        </button>
+                    </div>
+
+                    <div class="plan-card popular" data-plan="team_yearly">
+                        <div class="plan-name">Team Yearly</div>
+                        <div class="plan-price">₹18,000<span>/year</span></div>
+                        <div class="plan-period">Billed annually</div>
+                        <ul class="plan-features">
+                            <li>Everything in Team Monthly</li>
+                            <li>Same as ₹1,500/month × 12 months</li>
+                            <li>Best value for teams</li>
+                            <li>Dedicated success manager</li>
+                            <li>Priority support (24/7)</li>
+                        </ul>
+                        <button class="subscribe-button" onclick="selectPlan('team_yearly')">
+                            Subscribe Yearly
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -290,23 +341,37 @@
         const RAZORPAY_KEY_ID = 'rzp_test_Rneu0aaeOPlIHD'; // ✅ Test Key ID configured
         const API_BASE_URL = 'http://localhost:3000/api'; // Backend API URL - update if backend is on different port/domain
 
-        let selectedPlan = 'yearly'; // Default selection
+        let selectedPlan = 'monthly'; // Default selection
 
         // Plan configurations
         const plans = {
             monthly: {
-                name: 'Monthly Plan',
-                amount: 29900, // Amount in paise (₹299 * 100)
+                name: 'Individual Monthly',
+                amount: 9900, // Amount in paise (₹99 * 100)
                 currency: 'INR',
                 duration: 'monthly',
-                description: 'Monthly subscription to Sign Language Learning'
+                description: 'Monthly subscription to Sign Language Learning (Individual)'
             },
             yearly: {
-                name: 'Yearly Plan',
-                amount: 299900, // Amount in paise (₹2,999 * 100)
+                name: 'Individual Yearly',
+                amount: 118800, // Amount in paise (₹1,188 * 100 = ₹99 × 12)
                 currency: 'INR',
                 duration: 'yearly',
-                description: 'Yearly subscription to Sign Language Learning'
+                description: 'Yearly subscription to Sign Language Learning (Individual)'
+            },
+            team_monthly: {
+                name: 'Team Monthly',
+                amount: 150000, // Amount in paise (₹1,500 * 100)
+                currency: 'INR',
+                duration: 'monthly',
+                description: 'Monthly subscription to Sign Language Learning (Team)'
+            },
+            team_yearly: {
+                name: 'Team Yearly',
+                amount: 1800000, // Amount in paise (₹18,000 * 100 = ₹1,500 × 12)
+                currency: 'INR',
+                duration: 'yearly',
+                description: 'Yearly subscription to Sign Language Learning (Team)'
             }
         };
 
@@ -315,7 +380,10 @@
             document.querySelectorAll('.plan-card').forEach(card => {
                 card.classList.remove('selected');
             });
-            document.querySelector(`[data-plan="${planType}"]`).classList.add('selected');
+            const selectedCard = document.querySelector(`[data-plan="${planType}"]`);
+            if (selectedCard) {
+                selectedCard.classList.add('selected');
+            }
             selectedPlan = planType;
 
             // Initiate payment

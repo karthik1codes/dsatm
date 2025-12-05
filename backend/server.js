@@ -70,16 +70,36 @@ const db = new sqlite3.Database(dbPath, (err) => {
 const PLANS = {
     monthly: {
         name: 'Monthly Plan',
-        amount: 29900, // ₹299
+        amount: 9900, // ₹99
         duration: 'monthly',
         days: 30
     },
     yearly: {
         name: 'Yearly Plan',
-        amount: 299900, // ₹2,999
+        amount: 118800, // ₹1,188 (₹99 × 12)
+        duration: 'yearly',
+        days: 365
+    },
+    team_monthly: {
+        name: 'Team Monthly Plan',
+        amount: 150000, // ₹1,500
+        duration: 'monthly',
+        days: 30
+    },
+    team_yearly: {
+        name: 'Team Yearly Plan',
+        amount: 1800000, // ₹18,000 (₹1,500 × 12)
         duration: 'yearly',
         days: 365
     }
+};
+
+// Allow legacy/alias plan keys to map to the current plan keys
+const PLAN_ALIASES = {
+    individualMonthly: 'monthly',
+    individualYearly: 'yearly',
+    teamMonthly: 'team_monthly',
+    teamYearly: 'team_yearly'
 };
 
 // Helper function to calculate end date
@@ -131,7 +151,11 @@ app.get('/api/health', (req, res) => {
 // Create Razorpay order
 app.post('/api/subscription/create-order', async (req, res) => {
     try {
-        const { plan, amount, currency, userEmail, userName } = req.body;
+    let { plan, amount, currency, userEmail, userName } = req.body;
+    // Normalize plan using aliases if needed
+    if (!PLANS[plan] && PLAN_ALIASES[plan]) {
+        plan = PLAN_ALIASES[plan];
+    }
 
         // Validate plan
         if (!PLANS[plan]) {

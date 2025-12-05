@@ -1,0 +1,19 @@
+/* Subscription page specific styles */
+
+.plan-section {
+  margin-top: 32px;
+}
+
+.plan-section-title {
+  font-family: 'Fredoka', cursive;
+  font-size: clamp(20px, 4vw, 26px);
+  font-weight: 700;
+  color: #1F2937;
+  margin: 0 0 12px 0;
+}
+
+.plan-card.selected {
+  border-color: #8B5CF6;
+  box-shadow: 0 12px 24px rgba(139, 92, 246, 0.15);
+}
+

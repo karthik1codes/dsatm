@@ -11,25 +11,78 @@ const Subscription = () => {
   const navigate = useNavigate()
   const { currentUser } = useAuth()
   const announce = useAnnouncement()
-  const [selectedPlan, setSelectedPlan] = useState('yearly')
+  const [selectedPlan, setSelectedPlan] = useState('monthly')
   const [loading, setLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
 
   const plans = {
     monthly: {
-      name: 'Monthly Plan',
-      amount: 29900,
+      name: 'Individual Monthly',
+      amount: 9900, // ₹99 in paise
       currency: 'INR',
       duration: 'monthly',
-      description: 'Monthly subscription to Sign Language Learning',
+      description: 'Monthly subscription to Sign Language Learning (Individual)',
+      displayPrice: '₹99',
+      displayPeriod: '/month',
+      note: 'Billed monthly',
+      features: [
+        'Unlimited sign language conversions',
+        'Access to all 3D avatar animations',
+        'Learn sign language alphabets & words',
+        'Create sign language videos',
+        'Priority support',
+      ],
     },
     yearly: {
-      name: 'Yearly Plan',
-      amount: 299900,
+      name: 'Individual Yearly',
+      amount: 118800, // ₹1,188 in paise (₹99 × 12)
       currency: 'INR',
       duration: 'yearly',
-      description: 'Yearly subscription to Sign Language Learning',
+      description: 'Yearly subscription to Sign Language Learning (Individual)',
+      displayPrice: '₹1,188',
+      displayPeriod: '/year',
+      note: 'Billed annually',
+      features: [
+        'Everything in Monthly Plan',
+        'Same as ₹99/month × 12 months',
+        'Best value for long-term learning',
+        'Early access to new features',
+        '24/7 priority support',
+      ],
+    },
+    team_monthly: {
+      name: 'Team Monthly',
+      amount: 150000, // ₹1,500 in paise
+      currency: 'INR',
+      duration: 'monthly',
+      description: 'Monthly subscription to Sign Language Learning (Team)',
+      displayPrice: '₹1,500',
+      displayPeriod: '/month',
+      note: 'Billed monthly',
+      features: [
+        'All Individual plan benefits',
+        'Multi-seat team access',
+        'Shared progress & reporting',
+        'Priority onboarding & support',
+      ],
+    },
+    team_yearly: {
+      name: 'Team Yearly',
+      amount: 1800000, // ₹18,000 in paise (₹1,500 × 12)
+      currency: 'INR',
+      duration: 'yearly',
+      description: 'Yearly subscription to Sign Language Learning (Team)',
+      displayPrice: '₹18,000',
+      displayPeriod: '/year',
+      note: 'Billed annually',
+      features: [
+        'Everything in Team Monthly',
+        'Same as ₹1,500/month × 12 months',
+        'Best value for teams',
+        'Dedicated success manager',
+        'Priority support (24/7)',
+      ],
     },
   }
 
@@ -118,7 +171,7 @@ const Subscription = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          plan: planType,
+      plan: planType,
           amount: plan.amount,
           currency: plan.currency,
           userEmail: user.email,
@@ -267,79 +320,97 @@ const Subscription = () => {
           </div>
         )}
 
-        <div className="plans-grid" role="group" aria-label="Subscription plans">
-          <div
-            className={`plan-card ${selectedPlan === 'monthly' ? 'selected' : ''}`}
-            data-plan="monthly"
-            role="option"
-            aria-selected={selectedPlan === 'monthly'}
-          >
-            <div className="plan-name">Monthly Plan</div>
-            <div className="plan-price">
-              ₹299<span>/month</span>
-            </div>
-            <div className="plan-period">Billed monthly</div>
-            <ul className="plan-features" role="list">
-              <li>Unlimited sign language conversions</li>
-              <li>Access to all 3D avatar animations</li>
-              <li>Learn sign language alphabets & words</li>
-              <li>Create sign language videos</li>
-              <li>Priority support</li>
-            </ul>
-            <button
-              className="subscribe-button"
-              onClick={() => {
-                selectPlan('monthly')
-                initiatePayment('monthly')
-              }}
-              disabled={loading}
-              aria-label="Subscribe to monthly plan"
-            >
-              {loading && selectedPlan === 'monthly' ? (
-                <>
-                  <span className="loading-spinner"></span> Processing...
-                </>
-              ) : (
-                'Subscribe Monthly'
-              )}
-            </button>
+        <div className="plan-section">
+          <h2 className="plan-section-title">Individual Plans</h2>
+          <div className="plans-grid" role="group" aria-label="Individual subscription plans">
+            {['individualMonthly', 'individualYearly'].map((planKey) => {
+              const plan = plans[planKey]
+              const isSelected = selectedPlan === planKey
+              return (
+                <div
+                  key={planKey}
+                  className={`plan-card ${planKey === 'individualYearly' ? 'popular' : ''} ${isSelected ? 'selected' : ''}`}
+                  data-plan={planKey}
+                  role="option"
+                  aria-selected={isSelected}
+                >
+                  <div className="plan-name">{plan.name}</div>
+                  <div className="plan-price">
+                    {plan.displayPrice}<span>{plan.displayPeriod}</span>
+                  </div>
+                  <div className="plan-period">{plan.note}</div>
+                  <ul className="plan-features" role="list">
+                    {plan.features.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                  <button
+                    className="subscribe-button"
+                    onClick={() => {
+                      selectPlan(planKey)
+                      initiatePayment(planKey)
+                    }}
+                    disabled={loading}
+                    aria-label={`Subscribe to ${plan.name}`}
+                  >
+                    {loading && isSelected ? (
+                      <>
+                        <span className="loading-spinner"></span> Processing...
+                      </>
+                    ) : (
+                      `Subscribe ${plan.name.split(' ')[1]}`
+                    )}
+                  </button>
+                </div>
+              )
+            })}
           </div>
+        </div>
 
-          <div
-            className={`plan-card popular ${selectedPlan === 'yearly' ? 'selected' : ''}`}
-            data-plan="yearly"
-            role="option"
-            aria-selected={selectedPlan === 'yearly'}
-          >
-            <div className="plan-name">Yearly Plan</div>
-            <div className="plan-price">
-              ₹2,999<span>/year</span>
-            </div>
-            <div className="plan-period">Save 16% - Billed annually</div>
-            <ul className="plan-features" role="list">
-              <li>Everything in Monthly Plan</li>
-              <li>Save ₹589 compared to monthly</li>
-              <li>Best value for long-term learning</li>
-              <li>Early access to new features</li>
-              <li>24/7 priority support</li>
-            </ul>
-            <button
-              className="subscribe-button"
-              onClick={() => {
-                selectPlan('yearly')
-                initiatePayment('yearly')
-              }}
-              disabled={loading}
-              aria-label="Subscribe to yearly plan"
-            >
-              {loading && selectedPlan === 'yearly' ? (
-                <>
-                  <span className="loading-spinner"></span> Processing...
-                </>
-              ) : (
-                'Subscribe Yearly'
-              )}
-            </button>
+        <div className="plan-section">
+          <h2 className="plan-section-title">Team Plans</h2>
+          <div className="plans-grid" role="group" aria-label="Team subscription plans">
+            {['teamMonthly', 'teamYearly'].map((planKey) => {
+              const plan = plans[planKey]
+              const isSelected = selectedPlan === planKey
+              return (
+                <div
+                  key={planKey}
+                  className={`plan-card ${planKey === 'teamYearly' ? 'popular' : ''} ${isSelected ? 'selected' : ''}`}
+                  data-plan={planKey}
+                  role="option"
+                  aria-selected={isSelected}
+                >
+                  <div className="plan-name">{plan.name}</div>
+                  <div className="plan-price">
+                    {plan.displayPrice}<span>{plan.displayPeriod}</span>
+                  </div>
+                  <div className="plan-period">{plan.note}</div>
+                  <ul className="plan-features" role="list">
+                    {plan.features.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                  <button
+                    className="subscribe-button"
+                    onClick={() => {
+                      selectPlan(planKey)
+                      initiatePayment(planKey)
+                    }}
+                    disabled={loading}
+                    aria-label={`Subscribe to ${plan.name}`}
+                  >
+                    {loading && isSelected ? (
+                      <>
+                        <span className="loading-spinner"></span> Processing...
+                      </>
+                    ) : (
+                      `Subscribe ${plan.name.split(' ')[1]}`
+                    )}
+                  </button>
+                </div>
+              )
+            })}
           </div>
         </div>
 
