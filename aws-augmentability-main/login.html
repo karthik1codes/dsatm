@@ -31,63 +31,67 @@
         min-height: 100vh;
       }
       .page {
-        max-width: 560px;
+        max-width: 920px;
         margin: 0 auto;
-        padding: 52px 22px 64px;
+        padding: 72px 28px 110px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      .form-shell {
+        max-width: 520px;
+        width: 100%;
+        margin: 0 auto;
+        display: flex;
+        justify-content: center;
       }
       .card {
         background: var(--card-bg);
-        border-radius: 18px;
-        padding: 28px 22px;
-        box-shadow: var(--card-shadow);
+        border-radius: 26px;
+        padding: 38px 30px;
+        box-shadow: 0 22px 60px rgba(100, 116, 139, 0.2);
         border: 1px solid var(--border);
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
       .hero {
         text-align: center;
-        margin-bottom: 22px;
+        margin-bottom: 28px;
       }
       .hero h1 {
-        margin: 10px 0 6px;
-        font-size: 28px;
-        font-weight: 700;
+        margin: 12px 0 8px;
+        font-size: 32px;
+        font-weight: 800;
       }
       .hero p {
         margin: 0;
         color: var(--muted);
-        font-size: 16px;
-      }
-      label {
-        display: block;
-        font-weight: 700;
-        font-size: 15px;
-        color: var(--text);
-        margin-top: 12px;
-      }
-      input {
-        margin: 8px 0 4px;
-        padding: 13px 14px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        font-size: 15px;
-        width: 100%;
-        outline: none;
+        font-size: 17px;
       }
       button {
         width: 100%;
         margin-top: 16px;
-        padding: 14px;
+        padding: 15px;
         border: none;
-        border-radius: 14px;
+        border-radius: 16px;
         background: linear-gradient(135deg, #7c3aed, #a855f7);
         color: white;
-        font-weight: 800;
-        font-size: 16px;
+        font-weight: 900;
+        font-size: 17px;
         cursor: pointer;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       .status {
         margin-top: 12px;
         color: var(--muted);
-        font-size: 14px;
+        font-size: 15px;
         text-align: center;
       }
     </style>
@@ -99,18 +103,23 @@
           🤟 Inclusive AI
         </div>
         <h1>Sign in to AugmentAbility</h1>
-        <p>Use your AWS Cognito username and password to continue.</p>
+        <p>Sign in using AWS Cognito Hosted UI to continue.</p>
       </div>
 
+      <div class="form-shell">
       <div class="card">
-        <label for="username">Username</label>
-        <input id="username" type="text" placeholder="your-email or username">
-
-        <label for="pwd">Password</label>
-        <input id="pwd" type="password" placeholder="password">
-
-        <button id="sign-in">Sign In</button>
-        <div class="status" id="login-status">Not signed in.</div>
+        <div style="text-align: center; margin-bottom: 24px; width: 100%;">
+          <lord-icon src="https://cdn.lordicon.com/hrqwmuhr.json" trigger="loop" colors="primary:#7c3aed,secondary:#f97316" style="width: 80px; height: 80px;"></lord-icon>
+        </div>
+        
+        <div style="width: 100%; display: flex; justify-content: center; align-items: center;">
+          <button id="hosted-ui-login" type="button" style="background: linear-gradient(135deg, #7c3aed, #a855f7); margin-top: 0; padding: 18px; font-size: 18px; width: 100%; max-width: 100%;">
+            Sign in with AWS Cognito
+          </button>
+        </div>
+        
+        <div class="status" id="login-status" style="margin-top: 20px; width: 100%; text-align: center;">Click the button above to sign in.</div>
+      </div>
       </div>
     </div>
 
@@ -118,61 +127,86 @@
     <script src="lib/aws-sdk-2.1665.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-amplify/4.3.46/aws-amplify.min.js"></script>
     <script src="config.js"></script>
-    <script src="lib/main.js"></script>
     <script>
       function updateLoginStatus(text) {
         const el = document.getElementById('login-status');
         if (el) el.textContent = text;
       }
-      function attachSignIn() {
-        const btn = document.getElementById('sign-in');
-        if (!btn) return;
-        btn.addEventListener('click', function () {
-          const username = document.getElementById('username').value;
-          const pass = document.getElementById('pwd').value;
-          if (!username || !pass) {
-            updateLoginStatus('Please enter both username and password.');
-            return;
-          }
-          btn.disabled = true;
-          btn.textContent = 'Signing in...';
-          if (!window.aws_amplify || !aws_amplify.Amplify || !aws_amplify.Amplify.Auth) {
-            updateLoginStatus('Amplify not ready yet. Please try again.');
-            btn.disabled = false;
-            btn.textContent = 'Sign In';
-            return;
-          }
-          aws_amplify.Amplify.Auth.signIn(username, pass)
-            .then(() => {
-              updateLoginStatus('Sign-in successful. Redirecting...');
-              setTimeout(() => {
-                window.location.href = '/aws-augmentability-main/index-landing.html';
-              }, 400);
-            })
-            .catch(err => {
-              console.error('Sign in error:', err);
-              updateLoginStatus('Error: ' + (err.message || err));
-              btn.disabled = false;
-              btn.textContent = 'Sign In';
-            });
-        });
-      }
+      
       function checkCurrentUser() {
         if (!window.aws_amplify || !aws_amplify.Amplify || !aws_amplify.Amplify.Auth) {
           setTimeout(checkCurrentUser, 200);
           return;
         }
+        aws_amplify.Amplify.configure(amplifyConfig);
         aws_amplify.Amplify.Auth.currentAuthenticatedUser()
           .then(() => {
             updateLoginStatus('Already signed in. Redirecting...');
-            window.location.href = '/aws-augmentability-main/index-landing.html';
+            setTimeout(() => {
+              window.location.href = '/aws-augmentability-main/index-landing.html';
+            }, 500);
           })
           .catch(() => {
-            updateLoginStatus('Not signed in. Please sign in with Cognito.');
+            updateLoginStatus('Click the button above to sign in with AWS Cognito.');
           });
       }
+      
+      // Handle OAuth callback from Cognito Hosted UI (if redirected back here)
+      function handleOAuthCallback() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (code) {
+          // User is returning from Cognito Hosted UI
+          updateLoginStatus('Completing sign-in...');
+          
+          if (window.aws_amplify && aws_amplify.Amplify && aws_amplify.Amplify.Auth) {
+            aws_amplify.Amplify.configure(amplifyConfig);
+            // Amplify will automatically handle the code exchange
+            setTimeout(() => {
+              aws_amplify.Amplify.Auth.currentAuthenticatedUser()
+                .then(() => {
+                  updateLoginStatus('Sign-in successful. Redirecting...');
+                  setTimeout(() => {
+                    window.location.href = '/aws-augmentability-main/index-landing.html';
+                  }, 500);
+                })
+                .catch(err => {
+                  console.error('OAuth callback error:', err);
+                  updateLoginStatus('Sign-in failed. Please try again.');
+                });
+            }, 500);
+          } else {
+            // Wait for Amplify to load
+            setTimeout(handleOAuthCallback, 200);
+          }
+        }
+      }
+      
+      // Redirect to Cognito Hosted UI
+      function redirectToHostedUI() {
+        const clientId = amplifyConfig.Auth.userPoolWebClientId;
+        const redirectUri = window.location.origin + '/aws-augmentability-main/index-landing.html';
+        const responseType = 'code';
+        const scope = 'email openid';
+        
+        // Build the hosted UI URL
+        const hostedUIUrl = `https://${clientId}.auth.eu-west-1.amazoncognito.com/login?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=${responseType}&scope=${encodeURIComponent(scope)}`;
+        
+        // Redirect to hosted UI
+        window.location.href = hostedUIUrl;
+      }
+      
+      function attachHostedUIButton() {
+        const btn = document.getElementById('hosted-ui-login');
+        if (btn) {
+          btn.addEventListener('click', redirectToHostedUI);
+        }
+      }
+      
       document.addEventListener('DOMContentLoaded', () => {
-        attachSignIn();
+        attachHostedUIButton();
+        handleOAuthCallback(); // Check for OAuth callback first
         checkCurrentUser();
       });
     </script>
