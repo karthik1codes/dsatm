@@ -32,16 +32,16 @@ function CatchAllRoute() {
     )
   }
   
-  // Redirect authenticated users to home (/), others to login
-  return <Navigate to={(isAuthenticated || hasValidSession) ? "/" : "/login"} replace />
+  // Redirect authenticated users to home (/home), others to signin
+  return <Navigate to={(isAuthenticated || hasValidSession) ? "/home" : "/signin"} replace />
 }
 
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes - login and signup (only accessible when not authenticated) */}
+      {/* Public routes - signin (only accessible when not authenticated) */}
       <Route 
-        path="/login" 
+        path="/signin" 
         element={
           <PublicRoute>
             <Login />
@@ -50,14 +50,26 @@ function AppRoutes() {
       />
       
       {/* Protected routes - require authentication */}
-      {/* Home route at root path */}
+      {/* Home route - always accessible at /home */}
       <Route 
-        path="/" 
+        path="/home" 
         element={
           <ProtectedRoute>
             <Home />
           </ProtectedRoute>
         } 
+      />
+      
+      {/* Root path redirects to /home */}
+      <Route 
+        path="/" 
+        element={<Navigate to="/home" replace />}
+      />
+      
+      {/* Redirect /login to /signin for backward compatibility */}
+      <Route 
+        path="/login" 
+        element={<Navigate to="/signin" replace />}
       />
       
       <Route 

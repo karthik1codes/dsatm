@@ -26,9 +26,9 @@ const PublicRoute = ({ children }) => {
     )
   }
 
-  // If already authenticated (either way), redirect to home (/) with replace: true
+  // If already authenticated (either way), redirect to home (/home) with replace: true
   if (isAuthenticated || hasValidSession) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/home" replace />
   }
 
   // User is not authenticated, show the public route (login/signup page)

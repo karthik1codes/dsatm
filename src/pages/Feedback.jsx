@@ -94,7 +94,7 @@ function Feedback() {
           }} 
           onClick={() => {
             // Navigate directly to home - no authentication check needed
-            navigate('/')
+            navigate('/home')
           }}
         >
           <div style={{
@@ -118,7 +118,7 @@ function Feedback() {
         <button
           onClick={() => {
             // Navigate directly to home - no authentication check needed
-            navigate('/')
+            navigate('/home')
           }}
           style={{
             padding: '10px 20px',

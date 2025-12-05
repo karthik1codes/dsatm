@@ -202,33 +202,62 @@
             function handleOAuthCallback() {
                 const urlParams = new URLSearchParams(window.location.search);
                 const code = urlParams.get('code');
+                const error = urlParams.get('error');
+                
+                if (error) {
+                    console.error('OAuth error:', error);
+                    const errorDescription = urlParams.get('error_description') || error;
+                    alert('Sign-in error: ' + errorDescription);
+                    window.location.href = '/aws-augmentability-main/login.html';
+                    return true;
+                }
                 
                 if (code) {
                     // User is returning from Cognito Hosted UI with authorization code
-                    console.log('OAuth callback detected, processing...');
+                    console.log('OAuth callback detected, processing code...');
                     
-                    if (window.aws_amplify && aws_amplify.Amplify && aws_amplify.Amplify.Auth) {
-                        aws_amplify.Amplify.configure(amplifyConfig);
+                    // Wait for Amplify to be ready
+                    function processOAuthCode() {
+                        if (!window.aws_amplify || !aws_amplify.Amplify || !aws_amplify.Amplify.Auth) {
+                            setTimeout(processOAuthCode, 200);
+                            return;
+                        }
                         
-                        // Amplify will automatically exchange the code for tokens
-                        // Check authentication after a brief delay to allow token exchange
-                        setTimeout(() => {
-                            aws_amplify.Amplify.Auth.currentAuthenticatedUser()
-                                .then(() => {
-                                    console.log('OAuth sign-in successful');
-                                    // Remove the code from URL for clean redirect
-                                    window.history.replaceState({}, document.title, window.location.pathname);
-                                })
-                                .catch(err => {
-                                    console.error('OAuth callback error:', err);
-                                    // Redirect to login if token exchange failed
-                                    window.location.href = '/aws-augmentability-main/login.html';
-                                });
-                        }, 500);
-                    } else {
-                        // Wait for Amplify to load
-                        setTimeout(handleOAuthCallback, 200);
+                        try {
+                            // Configure Amplify first
+                            aws_amplify.Amplify.configure(amplifyConfig);
+                            
+                            // Amplify should automatically handle the OAuth code exchange
+                            // when currentAuthenticatedUser is called after OAuth redirect
+                            // Wait a moment for Amplify to process the URL parameters
+                            setTimeout(() => {
+                                aws_amplify.Amplify.Auth.currentAuthenticatedUser()
+                                    .then((user) => {
+                                        console.log('OAuth sign-in successful, user:', user);
+                                        // Remove the code from URL for clean redirect
+                                        const cleanUrl = window.location.pathname;
+                                        window.history.replaceState({}, document.title, cleanUrl);
+                                        // User is now authenticated, page will continue to load normally
+                                    })
+                                    .catch(err => {
+                                        console.error('OAuth callback error - user not authenticated:', err);
+                                        // If currentAuthenticatedUser fails, try to use the code directly
+                                        // This might happen if Amplify didn't automatically exchange the code
+                                        console.log('Attempting to handle OAuth code manually...');
+                                        
+                                        // Redirect back to login to try again
+                                        setTimeout(() => {
+                                            window.location.href = '/aws-augmentability-main/login.html';
+                                        }, 2000);
+                                    });
+                            }, 1000);
+                        } catch (configError) {
+                            console.error('Error configuring Amplify:', configError);
+                            window.location.href = '/aws-augmentability-main/login.html';
+                        }
                     }
+                    
+                    processOAuthCode();
                     return true; // OAuth callback handled
                 }
                 return false; // Not an OAuth callback

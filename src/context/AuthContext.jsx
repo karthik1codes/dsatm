@@ -82,21 +82,52 @@ export const AuthProvider = ({ children }) => {
   // Login function - sets token and stores in localStorage
   // Accepts optional navigate function to handle navigation after login
   const login = useCallback((userData, navigate) => {
-    if (!userData?.credential) return
+    try {
+      if (!userData?.credential) {
+        console.error('No credential provided to login function')
+        throw new Error('Invalid request: No credential provided')
+      }
 
-    const profile = decodeJwtCredential(userData.credential)
-    const user = {
-      ...profile,
-      credential: userData.credential,
-      loginTime: new Date().toISOString(),
-    }
+      const profile = decodeJwtCredential(userData.credential)
+      if (!profile || !profile.email) {
+        console.error('Failed to decode credential or missing email')
+        throw new Error('Invalid request: Failed to decode credential')
+      }
 
-    setCurrentUser(user)
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user))
-    
-    // Navigate to home with replace: true to remove login from history
-    if (navigate && typeof navigate === 'function') {
-      navigate("/", { replace: true })
+      const user = {
+        ...profile,
+        credential: userData.credential,
+        loginTime: new Date().toISOString(),
+      }
+
+      // Set state first
+      setCurrentUser(user)
+      
+      // Save to localStorage
+      try {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user))
+      } catch (storageError) {
+        console.error('Failed to save to localStorage:', storageError)
+        // Continue anyway - state is set
+      }
+      
+      // Navigate to home after state is set
+      // Use requestAnimationFrame to ensure React has processed the state update
+      if (navigate && typeof navigate === 'function') {
+        requestAnimationFrame(() => {
+          try {
+            navigate("/home", { replace: true })
+          } catch (navError) {
+            console.error('Navigation error:', navError)
+            // Fallback: use window.location if navigate fails
+            window.location.href = '/home'
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Error in login function:', error)
+      // Re-throw to let the caller handle it
+      throw error
     }
   }, [decodeJwtCredential])
 
@@ -120,15 +151,15 @@ export const AuthProvider = ({ children }) => {
     [decodeJwtCredential]
   )
 
-  // Sign out - clears auth state and navigates to login
+  // Sign out - clears auth state and navigates to signin
   // Accepts optional navigate function to handle navigation after logout
   const signOut = useCallback((navigate) => {
     localStorage.removeItem(AUTH_STORAGE_KEY)
     setCurrentUser(null)
     
-    // Navigate to login with replace: true to prevent back navigation
+    // Navigate to signin with replace: true to prevent back navigation
     if (navigate && typeof navigate === 'function') {
-      navigate("/login", { replace: true })
+      navigate("/signin", { replace: true })
     }
   }, [])
 

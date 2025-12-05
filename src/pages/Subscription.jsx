@@ -476,7 +476,7 @@ const Subscription = () => {
         </div>
 
         <div className="back-link">
-          <Link to="/" aria-label="Back to home page">
+          <Link to="/home" aria-label="Back to home page">
             ← Back to Home
           </Link>
         </div>

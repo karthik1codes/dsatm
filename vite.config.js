@@ -27,6 +27,8 @@ export default defineConfig({
         const urlPath = req.url.split('?')[0] // Remove query params
         const isStaticFile = urlPath.includes('.') && !urlPath.endsWith('/')
         const isReactRoute = (urlPath === '/home' || 
+                              urlPath === '/signin' ||
+                              urlPath === '/login' ||
                               urlPath === '/feedback' || 
                               urlPath === '/' ||
                               (!isStaticFile && 

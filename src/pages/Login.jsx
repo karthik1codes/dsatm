@@ -9,12 +9,7 @@ const Login = () => {
   const [buttonContainerReady, setButtonContainerReady] = useState(false)
 
   // PublicRoute component handles redirecting authenticated users
-  // This effect is kept as a backup but PublicRoute should handle it
-  useEffect(() => {
-    if (currentUser && !isLoading) {
-      navigate('/', { replace: true })
-    }
-  }, [currentUser, isLoading, navigate])
+  // No need for manual navigation here - PublicRoute will handle it
 
   useEffect(() => {
     // Wait for Google script to load
@@ -51,10 +46,31 @@ const Login = () => {
         window.google.accounts.id.initialize({
           client_id: '369705995460-d2f937r1bj3963upbmob113ngkf5v6og.apps.googleusercontent.com',
           callback: (response) => {
-            // Use login function from AuthContext
-            login(response)
-            // Navigate to home (/) with replace: true to remove login from history
-            navigate('/', { replace: true })
+            try {
+              // Validate response first
+              if (!response) {
+                console.error('No response from Google Sign-In')
+                return
+              }
+              
+              if (!response.credential) {
+                console.error('No credential in response:', response)
+                // Check if it's a cancellation
+                if (response.error) {
+                  console.log('Sign-in cancelled or error:', response.error)
+                  return
+                }
+                return
+              }
+
+              // Use login function from AuthContext and pass navigate function
+              // AuthContext will handle navigation after setting user state
+              login(response, navigate)
+            } catch (error) {
+              console.error('Error during sign-in:', error)
+              // Don't show error to user - let PublicRoute handle redirect
+              // The error is logged for debugging
+            }
           },
           cancel_on_tap_outside: true,
         })

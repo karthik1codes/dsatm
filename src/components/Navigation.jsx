@@ -33,7 +33,7 @@ const Navigation = ({ onStartLearning, onOpenSettings }) => {
   return (
     <header className="site-header" role="banner">
       <nav className="nav-header" role="navigation" aria-label="Primary navigation">
-        <Link to="/" className="logo" aria-label="BrightWords home">
+        <Link to="/home" className="logo" aria-label="BrightWords home">
           <div className="logo-icon" aria-hidden="true">✨</div>
           <span>BrightWords</span>
         </Link>
@@ -100,14 +100,14 @@ const Navigation = ({ onStartLearning, onOpenSettings }) => {
           <Link to="/feedback" className="nav-item" role="menuitem">
             Feedback
           </Link>
-          <Link
-            to="/superpower"
+          <a
+            href="/aws-augmentability-main/login.html"
             className="nav-item superpower-link-bypass"
             role="menuitem"
             title="SuperPower - AWS AugmentAbility features"
           >
             SuperPower
-          </Link>
+          </a>
         </div>
 
         <div className="user-section" aria-label="User quick actions">

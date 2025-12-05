@@ -54,9 +54,11 @@
         box-shadow: 0 22px 60px rgba(100, 116, 139, 0.2);
         border: 1px solid var(--border);
         width: 100%;
+        max-width: 520px;
         display: flex;
         flex-direction: column;
         align-items: center;
+        box-sizing: border-box;
       }
       .hero {
         text-align: center;
@@ -108,17 +110,18 @@
 
       <div class="form-shell">
       <div class="card">
-        <div style="text-align: center; margin-bottom: 24px; width: 100%;">
-          <lord-icon src="https://cdn.lordicon.com/hrqwmuhr.json" trigger="loop" colors="primary:#7c3aed,secondary:#f97316" style="width: 80px; height: 80px;"></lord-icon>
+        <div style="text-align: center; margin-bottom: 32px; width: 100%; display: flex; justify-content: center; align-items: center;">
+          <lord-icon src="https://cdn.lordicon.com/hrqwmuhr.json" trigger="loop" colors="primary:#7c3aed,secondary:#f97316" style="width: 100px; height: 100px; max-width: 100%;"></lord-icon>
         </div>
         
-        <div style="width: 100%; display: flex; justify-content: center; align-items: center;">
-          <button id="hosted-ui-login" type="button" style="background: linear-gradient(135deg, #7c3aed, #a855f7); margin-top: 0; padding: 18px; font-size: 18px; width: 100%; max-width: 100%;">
-            Sign in with AWS Cognito
+        <div style="width: 100%; display: flex; justify-content: center; align-items: center; margin-bottom: 20px;">
+          <button id="hosted-ui-login" type="button" style="background: linear-gradient(135deg, #7c3aed, #a855f7); margin-top: 0; padding: 18px 24px; font-size: 18px; width: 100%; max-width: 100%; box-sizing: border-box; gap: 8px;">
+            <i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i>
+            <span>Sign in with AWS Cognito</span>
           </button>
         </div>
         
-        <div class="status" id="login-status" style="margin-top: 20px; width: 100%; text-align: center;">Click the button above to sign in.</div>
+        <div class="status" id="login-status" style="margin-top: 0; width: 100%; text-align: center; padding: 0 10px; box-sizing: border-box;">Click the button above to sign in.</div>
       </div>
       </div>
     </div>
@@ -134,64 +137,40 @@
       }
       
       function checkCurrentUser() {
-        // Always show the login page, don't auto-redirect authenticated users
-        // This allows users to sign in again or switch accounts
-        if (!window.aws_amplify || !aws_amplify.Amplify || !aws_amplify.Amplify.Auth) {
-          setTimeout(checkCurrentUser, 200);
-          return;
-        }
-        aws_amplify.Amplify.configure(amplifyConfig);
-        aws_amplify.Amplify.Auth.currentAuthenticatedUser()
-          .then(() => {
-            // User is authenticated, but don't redirect - let them sign in again if needed
-            updateLoginStatus('You are already signed in. Click the button to sign in with a different account or continue.');
-          })
-          .catch(() => {
-            updateLoginStatus('Click the button above to sign in with AWS Cognito.');
-          });
+        // Don't check for existing user - always show login page
+        // This allows users to sign in fresh every time
+        updateLoginStatus('Click the button above to sign in with AWS Cognito.');
       }
       
-      // Handle OAuth callback from Cognito Hosted UI (if redirected back here)
+      // Handle OAuth callback from Cognito Hosted UI
+      // Note: OAuth callback should redirect to index-landing.html, not login.html
+      // This function is here as a fallback in case user lands here with a code
       function handleOAuthCallback() {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         
         if (code) {
-          // User is returning from Cognito Hosted UI
-          updateLoginStatus('Completing sign-in...');
-          
-          if (window.aws_amplify && aws_amplify.Amplify && aws_amplify.Amplify.Auth) {
-            aws_amplify.Amplify.configure(amplifyConfig);
-            // Amplify will automatically handle the code exchange
-            setTimeout(() => {
-              aws_amplify.Amplify.Auth.currentAuthenticatedUser()
-                .then(() => {
-                  updateLoginStatus('Sign-in successful. Redirecting...');
-                  setTimeout(() => {
-                    window.location.href = '/aws-augmentability-main/index-landing.html';
-                  }, 500);
-                })
-                .catch(err => {
-                  console.error('OAuth callback error:', err);
-                  updateLoginStatus('Sign-in failed. Please try again.');
-                });
-            }, 500);
-          } else {
-            // Wait for Amplify to load
-            setTimeout(handleOAuthCallback, 200);
-          }
+          // User has a code but landed on login.html - redirect to landing page
+          // The landing page will handle the OAuth callback properly
+          console.log('OAuth code detected, redirecting to landing page...');
+          const redirectUri = window.location.origin + '/aws-augmentability-main/index-landing.html';
+          window.location.href = redirectUri + '?code=' + encodeURIComponent(code);
         }
       }
       
       // Redirect to Cognito Hosted UI
       function redirectToHostedUI() {
+        // Use the domain from config.js
+        const domain = amplifyConfig.Auth.oauth.domain;
         const clientId = amplifyConfig.Auth.userPoolWebClientId;
         const redirectUri = window.location.origin + '/aws-augmentability-main/index-landing.html';
         const responseType = 'code';
         const scope = 'email openid';
         
-        // Build the hosted UI URL
-        const hostedUIUrl = `https://${clientId}.auth.eu-west-1.amazoncognito.com/login?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=${responseType}&scope=${encodeURIComponent(scope)}`;
+        // Build the hosted UI URL using the configured domain
+        const hostedUIUrl = `https://${domain}/login?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=${responseType}&scope=${encodeURIComponent(scope)}`;
+        
+        console.log('Redirecting to Cognito Hosted UI:', hostedUIUrl);
         
         // Redirect to hosted UI
         window.location.href = hostedUIUrl;
