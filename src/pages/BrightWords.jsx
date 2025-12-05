@@ -107,12 +107,8 @@ function BrightWords() {
                   e.stopImmediatePropagation()
                   console.log('Feedback link clicked - navigating directly to /feedback')
                   
-                  // Direct navigation to Feedback page - it's public
-                  if (window.top && window.top !== window.self) {
-                    window.top.location.href = '/feedback'
-                  } else {
-                    window.location.href = '/feedback'
-                  }
+                  // Navigate to Feedback page using React Router - it's public
+                  navigate('/feedback')
                 }, true)
                 
                 console.log('Backup navigation handler attached to Feedback link')

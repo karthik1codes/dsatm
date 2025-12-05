@@ -58,7 +58,7 @@ const SignLanguage = () => {
   }
 
   const handleGoToHome = () => {
-    navigate('/home')
+    navigate('/')
   }
 
   return (
@@ -71,7 +71,7 @@ const SignLanguage = () => {
           <h1>Sign Language Learning</h1>
         </div>
         <Link
-          to="/home"
+          to="/"
           className="back-button"
           aria-label="Back to home page"
         >

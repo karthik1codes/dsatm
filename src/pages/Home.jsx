@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Navigation from '../components/Navigation'
 import SkipLink from '../components/SkipLink'
 import { useAccessibility } from '../context/AccessibilityContext'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from '../context/AuthContext'
 import { useAnnouncement } from '../hooks/useAnnouncement'
 import '../styles/Home.css'
 

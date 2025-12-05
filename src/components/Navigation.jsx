@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAccessibility } from '../context/AccessibilityContext'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from '../context/AuthContext'
 import { useAnnouncement } from '../hooks/useAnnouncement'
 import '../styles/Navigation.css'
 
@@ -19,6 +19,8 @@ const Navigation = ({ onStartLearning, onOpenSettings }) => {
 
   const handleSignOut = () => {
     signOut()
+    // Navigate to login with replace: true so back button cannot return to protected pages
+    navigate('/login', { replace: true })
     announce('Signed out successfully')
   }
 
@@ -32,7 +34,7 @@ const Navigation = ({ onStartLearning, onOpenSettings }) => {
   return (
     <header className="site-header" role="banner">
       <nav className="nav-header" role="navigation" aria-label="Primary navigation">
-        <Link to="/home" className="logo" aria-label="BrightWords home">
+        <Link to="/" className="logo" aria-label="BrightWords home">
           <div className="logo-icon" aria-hidden="true">✨</div>
           <span>BrightWords</span>
         </Link>
@@ -83,7 +85,7 @@ const Navigation = ({ onStartLearning, onOpenSettings }) => {
             role="menuitem"
             title="Sign Language Learning"
           >
-            🤟 Sign Language
+            Sign Language
           </Link>
           <a
             href="#parents"
@@ -105,7 +107,7 @@ const Navigation = ({ onStartLearning, onOpenSettings }) => {
             role="menuitem"
             title="SuperPower - AWS AugmentAbility features"
           >
-            ⚡ SuperPower
+            SuperPower
           </Link>
         </div>
 

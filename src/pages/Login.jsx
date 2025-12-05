@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from '../context/AuthContext'
 import '../styles/Login.css'
 
 const Login = () => {
   const navigate = useNavigate()
-  const { currentUser, isLoading, initializeGoogleAuth, handleCredentialResponse } = useAuth()
+  const { currentUser, isLoading, initializeGoogleAuth, login } = useAuth()
   const [buttonContainerReady, setButtonContainerReady] = useState(false)
 
+  // PublicRoute component handles redirecting authenticated users
+  // This effect is kept as a backup but PublicRoute should handle it
   useEffect(() => {
     if (currentUser && !isLoading) {
-      navigate('/home')
+      navigate('/', { replace: true })
     }
   }, [currentUser, isLoading, navigate])
 
@@ -49,8 +51,10 @@ const Login = () => {
         window.google.accounts.id.initialize({
           client_id: '369705995460-d2f937r1bj3963upbmob113ngkf5v6og.apps.googleusercontent.com',
           callback: (response) => {
-            handleCredentialResponse(response)
-            navigate('/home')
+            // Use login function from AuthContext
+            login(response)
+            // Navigate to home (/) with replace: true to remove login from history
+            navigate('/', { replace: true })
           },
           cancel_on_tap_outside: true,
         })
@@ -69,7 +73,7 @@ const Login = () => {
         }
       }
     }
-  }, [buttonContainerReady, currentUser, handleCredentialResponse, navigate])
+  }, [buttonContainerReady, currentUser, login, navigate])
 
   if (isLoading) {
     return (
