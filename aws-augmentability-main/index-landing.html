@@ -45,6 +45,68 @@
                 max-width: 1100px;
                 margin: 0 auto;
                 padding: 32px 18px 56px;
+                position: relative;
+            }
+
+            .logout-container {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                z-index: 1000;
+            }
+
+            .logout-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 18px;
+                border: none;
+                border-radius: 12px;
+                background: linear-gradient(135deg, #f97316, #fb923c);
+                color: white;
+                font-weight: 700;
+                font-size: 14px;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+
+            .logout-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4);
+            }
+
+            .logout-btn:active {
+                transform: translateY(0);
+            }
+
+            .logout-btn:disabled {
+                opacity: 0.7;
+                cursor: not-allowed;
+            }
+
+            @media (max-width: 768px) {
+                .logout-container {
+                    top: 10px;
+                    right: 10px;
+                }
+                
+                .logout-btn {
+                    padding: 8px 14px;
+                    font-size: 13px;
+                }
+                
+                .logout-btn span {
+                    display: none;
+                }
+                
+                .logout-btn {
+                    padding: 10px;
+                    border-radius: 50%;
+                    width: 40px;
+                    height: 40px;
+                    justify-content: center;
+                }
             }
 
             .hero {
@@ -139,6 +201,14 @@
 
     <body>
         <div class="page">
+            <!-- Logout Button -->
+            <div class="logout-container">
+                <button id="logout-btn" class="logout-btn" type="button" aria-label="Sign out">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Sign Out</span>
+                </button>
+            </div>
+
             <header class="hero">
                 <div class="badge">
                     🤟 Inclusive AI
@@ -202,6 +272,18 @@
             function handleOAuthCallback() {
                 const urlParams = new URLSearchParams(window.location.search);
                 const code = urlParams.get('code');
+                    const error = urlParams.get('error');
+                const errorDescription = urlParams.get('error_description');
+                
+                // Check for OAuth errors first
+                if (error) {
+                    console.error('OAuth error:', error, errorDescription);
+                    alert('Authentication error: ' + (errorDescription || error) + '. Please try signing in again.');
+                    // Clean URL and redirect to login
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    window.location.href = '/aws-augmentability-main/login.html';
+                    return true; // Error handled
+                }
                 
                 if (code) {
                     // User is returning from Cognito Hosted UI with authorization code
@@ -210,21 +292,26 @@
                     if (window.aws_amplify && aws_amplify.Amplify && aws_amplify.Amplify.Auth) {
                         aws_amplify.Amplify.configure(amplifyConfig);
                         
-                        // Amplify will automatically exchange the code for tokens
-                        // Check authentication after a brief delay to allow token exchange
+                        // Amplify should automatically handle the OAuth code exchange
+                        // Wait a moment for Amplify to process the code, then check authentication
                         setTimeout(() => {
                             aws_amplify.Amplify.Auth.currentAuthenticatedUser()
-                                .then(() => {
-                                    console.log('OAuth sign-in successful');
+                                .then((user) => {
+                                    console.log('OAuth sign-in successful', user);
                                     // Remove the code from URL for clean redirect
                                     window.history.replaceState({}, document.title, window.location.pathname);
                                 })
                                 .catch(err => {
-                                    console.error('OAuth callback error:', err);
-                                    // Redirect to login if token exchange failed
+                                    console.error('OAuth callback error - not authenticated:', err);
+                                    // If Amplify didn't handle it automatically, try manual code exchange
+                                    // This might happen if the redirect URI doesn't match exactly
+                                    console.log('Attempting manual OAuth code handling...');
+                                    
+                                    // Redirect to login with error message
+                                    alert('Sign-in failed. Please ensure the callback URL matches your Cognito configuration. Error: ' + (err.message || 'Unknown error'));
                                     window.location.href = '/aws-augmentability-main/login.html';
                                 });
-                        }, 500);
+                        }, 1000);
                     } else {
                         // Wait for Amplify to load
                         setTimeout(handleOAuthCallback, 200);
@@ -234,6 +321,41 @@
                 return false; // Not an OAuth callback
             }
             
+            // Handle logout button
+            function setupLogoutButton() {
+                const logoutBtn = document.getElementById('logout-btn');
+                if (!logoutBtn) {
+                    setTimeout(setupLogoutButton, 200);
+                    return;
+                }
+
+                logoutBtn.addEventListener('click', function() {
+                    if (!window.aws_amplify || !aws_amplify.Amplify || !aws_amplify.Amplify.Auth) {
+                        alert('Amplify not ready. Please try again.');
+                        return;
+                    }
+
+                    // Disable button during logout
+                    logoutBtn.disabled = true;
+                    logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Signing out...</span>';
+
+                    // Sign out from AWS Cognito
+                    aws_amplify.Amplify.Auth.signOut()
+                        .then(() => {
+                            console.log('Sign out successful');
+                            // Redirect to login page
+                            window.location.href = '/aws-augmentability-main/login.html';
+                        })
+                        .catch(err => {
+                            console.error('Sign out error:', err);
+                            alert('Error signing out: ' + (err.message || err));
+                            // Re-enable button
+                            logoutBtn.disabled = false;
+                            logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> <span>Sign Out</span>';
+                        });
+                });
+            }
+
             // Check authentication and redirect to login if not authenticated
             (function() {
                 // First check if this is an OAuth callback
@@ -254,6 +376,8 @@
                     .then(() => {
                         // User is authenticated, allow access to landing page
                         console.log('User authenticated, access granted');
+                        // Setup logout button after authentication is confirmed
+                        setupLogoutButton();
                     })
                     .catch(() => {
                         // User not authenticated, redirect to login
