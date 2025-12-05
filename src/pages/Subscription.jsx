@@ -16,6 +16,7 @@ const Subscription = () => {
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
 
+  // Plan configurations - keys must match backend plan keys
   const plans = {
     monthly: {
       name: 'Individual Monthly',
@@ -93,13 +94,38 @@ const Subscription = () => {
       navigate('/sign-language')
     }
 
-    // Load Razorpay script
-    if (!window.Razorpay) {
+    // Load Razorpay script if not already loaded
+    const loadRazorpayScript = () => {
+      if (window.Razorpay) {
+        console.log('✅ Razorpay SDK already loaded')
+        return
+      }
+
+      // Check if script is already being loaded
+      const existingScript = document.querySelector('script[src*="checkout.razorpay.com"]')
+      if (existingScript) {
+        console.log('⚠️ Razorpay script already in DOM, waiting for load...')
+        existingScript.addEventListener('load', () => {
+          console.log('✅ Razorpay SDK loaded from existing script')
+        })
+        return
+      }
+
+      // Load Razorpay script
       const script = document.createElement('script')
       script.src = 'https://checkout.razorpay.com/v1/checkout.js'
       script.async = true
+      script.onload = () => {
+        console.log('✅ Razorpay SDK loaded successfully')
+      }
+      script.onerror = () => {
+        console.error('❌ Failed to load Razorpay SDK')
+        setErrorMessage('Failed to load payment gateway. Please check your internet connection and refresh the page.')
+      }
       document.body.appendChild(script)
     }
+
+    loadRazorpayScript()
   }, [navigate])
 
   const getSubscriptionStatus = () => {
@@ -133,16 +159,22 @@ const Subscription = () => {
   }
 
   const initiatePayment = async (planType) => {
+    console.log('🔄 Initiating payment for plan:', planType)
+    
     const plan = plans[planType]
     if (!plan) {
-      setErrorMessage('Invalid plan selected')
+      console.error('❌ Invalid plan selected:', planType)
+      setErrorMessage('Invalid plan selected. Please try again.')
       return
     }
 
+    console.log('✅ Plan found:', plan.name, 'Amount:', plan.amount)
+
     const user = getUserInfo()
     if (!user) {
+      // ProtectedRoute will handle redirecting to login if not authenticated
+      // This should not happen since Subscription is a protected route
       setErrorMessage('Please login first')
-      navigate('/login', { replace: true })
       return
     }
 
@@ -167,16 +199,24 @@ const Subscription = () => {
       }
 
       // Create order
+      const orderPayload = {
+        plan: planType,
+        amount: plan.amount,
+        currency: plan.currency,
+        userEmail: user.email,
+        userName: user.name || user.given_name || 'User',
+      }
+      
+      console.log('📤 Creating order with payload:', {
+        ...orderPayload,
+        amount: plan.amount,
+        plan: planType
+      })
+
       const orderResponse = await fetch(`${API_BASE_URL}/subscription/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-      plan: planType,
-          amount: plan.amount,
-          currency: plan.currency,
-          userEmail: user.email,
-          userName: user.name || user.given_name || 'User',
-        }),
+        body: JSON.stringify(orderPayload),
         signal: AbortSignal.timeout(10000),
       })
 
@@ -188,19 +228,33 @@ const Subscription = () => {
         } catch (e) {
           errorData = { error: errorText || 'Server error' }
         }
-        throw new Error(errorData.error || errorData.details || `Server error: ${orderResponse.status}`)
+        console.error('❌ Order creation failed:', errorData)
+        const errorMsg = errorData.error || errorData.details || `Server error: ${orderResponse.status}`
+        throw new Error(errorMsg)
       }
 
       const orderData = await orderResponse.json()
+      console.log('✅ Order created successfully:', orderData)
 
       if (!orderData.orderId) {
+        console.error('❌ No order ID in response:', orderData)
         throw new Error(orderData.error || 'Failed to create order: No order ID received')
       }
 
-      // Initialize Razorpay
+      // Wait for Razorpay SDK to be available
+      let retryCount = 0
+      const maxRetries = 10
+      
+      while (typeof window.Razorpay === 'undefined' && retryCount < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 200))
+        retryCount++
+      }
+
       if (typeof window.Razorpay === 'undefined') {
         throw new Error('Razorpay SDK not loaded. Please check your internet connection and refresh the page.')
       }
+
+      console.log('✅ Razorpay SDK is ready, opening payment gateway...')
 
       const options = {
         key: RAZORPAY_KEY_ID,
@@ -226,10 +280,15 @@ const Subscription = () => {
 
       const razorpay = new window.Razorpay(options)
       razorpay.on('payment.failed', (response) => {
+        console.error('❌ Payment failed:', response)
         setLoading(false)
-        setErrorMessage('Payment failed: ' + (response.error.description || response.error.reason || 'Unknown error'))
+        setErrorMessage('Payment failed: ' + (response.error?.description || response.error?.reason || 'Unknown error'))
       })
+      
+      // Open Razorpay checkout
+      console.log('🚀 Opening Razorpay checkout with order ID:', orderData.orderId)
       razorpay.open()
+      console.log('✅ Razorpay checkout opened successfully')
     } catch (error) {
       console.error('Payment initiation error:', error)
       let errorMsg = ''
@@ -288,9 +347,9 @@ const Subscription = () => {
 
   const calculateEndDate = (planType) => {
     const endDate = new Date()
-    if (planType === 'monthly') {
+    if (planType === 'monthly' || planType === 'team_monthly') {
       endDate.setMonth(endDate.getMonth() + 1)
-    } else if (planType === 'yearly') {
+    } else if (planType === 'yearly' || planType === 'team_yearly') {
       endDate.setFullYear(endDate.getFullYear() + 1)
     }
     return endDate.toISOString()
@@ -323,23 +382,24 @@ const Subscription = () => {
         <div className="plan-section">
           <h2 className="plan-section-title">Individual Plans</h2>
           <div className="plans-grid" role="group" aria-label="Individual subscription plans">
-            {['individualMonthly', 'individualYearly'].map((planKey) => {
+            {['monthly', 'yearly'].map((planKey) => {
               const plan = plans[planKey]
               const isSelected = selectedPlan === planKey
               return (
                 <div
                   key={planKey}
-                  className={`plan-card ${planKey === 'individualYearly' ? 'popular' : ''} ${isSelected ? 'selected' : ''}`}
+                  className={`plan-card ${planKey === 'yearly' ? 'popular' : ''} ${isSelected ? 'selected' : ''}`}
                   data-plan={planKey}
                   role="option"
                   aria-selected={isSelected}
+                  style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
                 >
                   <div className="plan-name">{plan.name}</div>
                   <div className="plan-price">
                     {plan.displayPrice}<span>{plan.displayPeriod}</span>
                   </div>
                   <div className="plan-period">{plan.note}</div>
-                  <ul className="plan-features" role="list">
+                  <ul className="plan-features" role="list" style={{ flexGrow: 1 }}>
                     {plan.features.map((item, idx) => (
                       <li key={idx}>{item}</li>
                     ))}
@@ -358,7 +418,7 @@ const Subscription = () => {
                         <span className="loading-spinner"></span> Processing...
                       </>
                     ) : (
-                      `Subscribe ${plan.name.split(' ')[1]}`
+                      plan.duration === 'monthly' ? 'Subscribe Monthly' : 'Subscribe Yearly'
                     )}
                   </button>
                 </div>
@@ -370,23 +430,24 @@ const Subscription = () => {
         <div className="plan-section">
           <h2 className="plan-section-title">Team Plans</h2>
           <div className="plans-grid" role="group" aria-label="Team subscription plans">
-            {['teamMonthly', 'teamYearly'].map((planKey) => {
+            {['team_monthly', 'team_yearly'].map((planKey) => {
               const plan = plans[planKey]
               const isSelected = selectedPlan === planKey
               return (
                 <div
                   key={planKey}
-                  className={`plan-card ${planKey === 'teamYearly' ? 'popular' : ''} ${isSelected ? 'selected' : ''}`}
+                  className={`plan-card ${planKey === 'team_yearly' ? 'popular' : ''} ${isSelected ? 'selected' : ''}`}
                   data-plan={planKey}
                   role="option"
                   aria-selected={isSelected}
+                  style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
                 >
                   <div className="plan-name">{plan.name}</div>
                   <div className="plan-price">
                     {plan.displayPrice}<span>{plan.displayPeriod}</span>
                   </div>
                   <div className="plan-period">{plan.note}</div>
-                  <ul className="plan-features" role="list">
+                  <ul className="plan-features" role="list" style={{ flexGrow: 1 }}>
                     {plan.features.map((item, idx) => (
                       <li key={idx}>{item}</li>
                     ))}
@@ -405,7 +466,7 @@ const Subscription = () => {
                         <span className="loading-spinner"></span> Processing...
                       </>
                     ) : (
-                      `Subscribe ${plan.name.split(' ')[1]}`
+                      plan.duration === 'monthly' ? 'Subscribe Monthly' : 'Subscribe Yearly'
                     )}
                   </button>
                 </div>

@@ -18,9 +18,8 @@ const Navigation = ({ onStartLearning, onOpenSettings }) => {
   }
 
   const handleSignOut = () => {
-    signOut()
-    // Navigate to login with replace: true so back button cannot return to protected pages
-    navigate('/login', { replace: true })
+    // signOut will handle navigation with replace: true
+    signOut(navigate)
     announce('Signed out successfully')
   }
 

@@ -107,11 +107,15 @@ function BrightWords() {
                   e.stopImmediatePropagation()
                   console.log('Feedback link clicked - navigating directly to /feedback')
                   
-                  // Direct navigation to Feedback page - it's public
-                  if (window.top && window.top !== window.self) {
-                    window.top.location.href = '/feedback'
+                  // Direct navigation to Feedback page using React Router
+                  // Use navigate from parent window if available, otherwise use current window
+                  if (window.parent && window.parent !== window.self && window.parent.__reactRouterNavigate) {
+                    window.parent.__reactRouterNavigate('/feedback')
+                  } else if (window.__reactRouterNavigate) {
+                    window.__reactRouterNavigate('/feedback')
                   } else {
-                    window.location.href = '/feedback'
+                    // Fallback to React Router navigate from current context
+                    navigate('/feedback')
                   }
                 }, true)
                 

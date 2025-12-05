@@ -80,8 +80,8 @@ export const AuthProvider = ({ children }) => {
   }, [decodeJwtCredential])
 
   // Login function - sets token and stores in localStorage
-  // Navigation should be handled by the calling component
-  const login = useCallback((userData) => {
+  // Accepts optional navigate function to handle navigation after login
+  const login = useCallback((userData, navigate) => {
     if (!userData?.credential) return
 
     const profile = decodeJwtCredential(userData.credential)
@@ -93,9 +93,15 @@ export const AuthProvider = ({ children }) => {
 
     setCurrentUser(user)
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user))
+    
+    // Navigate to home with replace: true to remove login from history
+    if (navigate && typeof navigate === 'function') {
+      navigate("/", { replace: true })
+    }
   }, [decodeJwtCredential])
 
-  // Handle credential response
+  // Handle credential response - this is called by Google Sign-In button
+  // Note: Navigation will be handled by the login callback in Login component
   const handleCredentialResponse = useCallback(
     (response) => {
       if (!response?.credential) return
@@ -109,15 +115,21 @@ export const AuthProvider = ({ children }) => {
 
       setCurrentUser(user)
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user))
+      // Navigation will be handled by the component using this callback
     },
     [decodeJwtCredential]
   )
 
-  // Sign out - clears auth state
-  // Navigation should be handled by the calling component with replace: true
-  const signOut = useCallback(() => {
+  // Sign out - clears auth state and navigates to login
+  // Accepts optional navigate function to handle navigation after logout
+  const signOut = useCallback((navigate) => {
     localStorage.removeItem(AUTH_STORAGE_KEY)
     setCurrentUser(null)
+    
+    // Navigate to login with replace: true to prevent back navigation
+    if (navigate && typeof navigate === 'function') {
+      navigate("/login", { replace: true })
+    }
   }, [])
 
   // Initialize Google Auth

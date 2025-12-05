@@ -45,7 +45,7 @@ export default defineConfig({
         if (req.url.includes('.html') || req.url === '/') {
           res.setHeader(
             'Content-Security-Policy',
-            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://kit.fontawesome.com https://cdn.lordicon.com https://cdnjs.cloudflare.com https://accounts.google.com; object-src 'none'; base-uri 'self';"
+            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://kit.fontawesome.com https://cdn.lordicon.com https://cdnjs.cloudflare.com https://accounts.google.com https://checkout.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com; connect-src https://api.razorpay.com; object-src 'none'; base-uri 'self';"
           )
         }
         

@@ -9,40 +9,25 @@ const Login = () => {
   const [buttonContainerReady, setButtonContainerReady] = useState(false)
 
   // PublicRoute component handles redirecting authenticated users
-  // This effect is kept as a backup but PublicRoute should handle it
-  useEffect(() => {
-    if (currentUser && !isLoading) {
-      navigate('/', { replace: true })
-    }
-  }, [currentUser, isLoading, navigate])
+  // No need for additional redirect logic here - PublicRoute handles it
 
   useEffect(() => {
-    // Wait for Google script to load
+    // Wait for Google script to load (AuthContext handles script loading)
     const checkGoogleScript = setInterval(() => {
       if (window.google?.accounts?.id) {
         clearInterval(checkGoogleScript)
-        initializeGoogleAuth()
         setButtonContainerReady(true)
       }
     }, 150)
 
-    // Load Google script if not present
-    if (!document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
-      const script = document.createElement('script')
-      script.src = 'https://accounts.google.com/gsi/client'
-      script.async = true
-      script.defer = true
-      script.onload = () => {
-        if (window.google?.accounts?.id) {
-          initializeGoogleAuth()
-          setButtonContainerReady(true)
-        }
-      }
-      document.head.appendChild(script)
+    // If Google script is already loaded, set ready immediately
+    if (window.google?.accounts?.id) {
+      clearInterval(checkGoogleScript)
+      setButtonContainerReady(true)
     }
 
     return () => clearInterval(checkGoogleScript)
-  }, [initializeGoogleAuth])
+  }, [])
 
   useEffect(() => {
     if (buttonContainerReady && window.google?.accounts?.id) {
@@ -51,10 +36,8 @@ const Login = () => {
         window.google.accounts.id.initialize({
           client_id: '369705995460-d2f937r1bj3963upbmob113ngkf5v6og.apps.googleusercontent.com',
           callback: (response) => {
-            // Use login function from AuthContext
-            login(response)
-            // Navigate to home (/) with replace: true to remove login from history
-            navigate('/', { replace: true })
+            // Use login function from AuthContext - it will handle navigation
+            login(response, navigate)
           },
           cancel_on_tap_outside: true,
         })

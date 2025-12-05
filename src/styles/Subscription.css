@@ -17,3 +17,66 @@
   box-shadow: 0 12px 24px rgba(139, 92, 246, 0.15);
 }
 
+/* Ensure plan cards are aligned properly */
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  align-items: stretch;
+}
+
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+}
+
+/* Ensure "Most Popular" badge doesn't affect card alignment */
+.plan-card.popular::before {
+  content: 'Most Popular';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #8B5CF6, #EC4899);
+  color: white;
+  padding: 6px 20px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+/* Ensure all card elements start at the same vertical position */
+.plan-card .plan-name {
+  margin-top: 0;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.plan-card .plan-price {
+  margin: 20px 0;
+  flex-shrink: 0;
+}
+
+.plan-card .plan-period {
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.plan-card .plan-features {
+  flex-grow: 1;
+  margin: 20px 0;
+  min-height: 0; /* Allow flex item to shrink */
+  display: flex;
+  flex-direction: column;
+}
+
+.plan-card .subscribe-button {
+  margin-top: auto; /* Push button to bottom */
+  width: 100%;
+  flex-shrink: 0;
+}
+
