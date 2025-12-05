@@ -1,10 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import fs from 'fs'
+import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 9000,
+    port: 8000,
+    host: '0.0.0.0', // Listen on all network interfaces (IPv4 and IPv6)
     open: true,
     // Configure middleware to handle redirect and CSP headers
     configureServer(server) {
@@ -16,6 +19,25 @@ export default defineConfig({
           })
           res.end()
           return
+        }
+        
+        // IMPORTANT: For React Router SPA to work with direct navigation (window.location.href),
+        // serve index-react.html for all React Router routes that don't match static files
+        // This ensures /home, /feedback, etc. load the React app instead of 404
+        const urlPath = req.url.split('?')[0] // Remove query params
+        const isStaticFile = urlPath.includes('.') && !urlPath.endsWith('/')
+        const isReactRoute = (urlPath === '/home' || 
+                              urlPath === '/feedback' || 
+                              urlPath === '/' ||
+                              (!isStaticFile && 
+                               !urlPath.startsWith('/aws-augmentability-main') && 
+                               !urlPath.startsWith('/sign-language') &&
+                               urlPath !== '/index.html'))
+        
+        if (isReactRoute && urlPath !== '/index.html') {
+          // For React Router routes, let Vite handle it naturally
+          // Vite's dev server should serve index-react.html for SPA routes
+          // We just need to ensure we don't block it
         }
         
         // Remove or relax CSP headers for development

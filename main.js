@@ -2621,16 +2621,15 @@ function showParentsCommunityDialog(whatsappLink, facebookLink) {
 }
 
 function watchDemo() {
-    // YouTube video links for dyslexia and dysgraphia
-    const dyslexiaVideoLink = 'https://youtu.be/65psPXWzNic?si=7xCTwNf0Fs_ymuDq';
-    const dysgraphiaVideoLink = 'https://youtu.be/WMfl5kqSWmk?si=HogwyawIdvY62P1i';
+    // YouTube video link for kids with disabilities
+    const demoVideoLink = 'https://youtu.be/dm7uXtpNiAQ?si=iteO2qNC-dEDF7AM';
     
-    // Show selection dialog
-    showVideoSelectionDialog(dyslexiaVideoLink, dysgraphiaVideoLink);
+    // Show modal popup
+    showDemoVideoModal(demoVideoLink);
     playSound('click');
 }
 
-function showVideoSelectionDialog(dyslexiaLink, dysgraphiaLink) {
+function showDemoVideoModal(videoLink) {
     // Get current theme colors
     const root = getComputedStyle(document.documentElement);
     const primaryColor = root.getPropertyValue('--primary-purple').trim() || '#8B5CF6';
@@ -2638,7 +2637,7 @@ function showVideoSelectionDialog(dyslexiaLink, dysgraphiaLink) {
     
     // Create modal overlay
     const overlay = document.createElement('div');
-    overlay.className = 'video-selection-overlay';
+    overlay.className = 'demo-video-modal-overlay';
     overlay.style.cssText = `
         position: fixed;
         inset: 0;
@@ -2648,146 +2647,119 @@ function showVideoSelectionDialog(dyslexiaLink, dysgraphiaLink) {
         justify-content: center;
         z-index: 10000;
         animation: fadeIn 0.3s ease;
+        padding: 20px;
     `;
     
     // Create modal content
     const modal = document.createElement('div');
-    modal.className = 'video-selection-modal';
+    modal.className = 'demo-video-modal';
     modal.style.cssText = `
         background: white;
         border-radius: 24px;
         padding: 40px;
-        max-width: 500px;
+        max-width: 450px;
         width: 90%;
         box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         animation: slideUp 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
     `;
     
     modal.innerHTML = `
-        <h2 style="font-family: 'Fredoka', cursive; font-size: 28px; color: #1F2937; margin-bottom: 10px; text-align: center;">
-            Choose a Demo Video
+        <h2 style="font-family: 'Fredoka', cursive; font-size: 28px; color: #1F2937; margin-bottom: 20px;">
+            📹 Watch Demo Video
         </h2>
-        <p style="color: #6B7280; text-align: center; margin-bottom: 30px;">
-            Select which video you'd like to watch
+        <p style="color: #6B7280; margin-bottom: 30px; line-height: 1.6; font-size: 16px;">
+            Watch a video on What is a disability
         </p>
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-            <button class="video-option-btn" data-link="${dyslexiaLink}" style="
-                background: linear-gradient(135deg, ${primaryColor}, ${secondaryColor});
-                color: white;
-                border: none;
-                padding: 18px 24px;
-                border-radius: 16px;
-                font-size: 18px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: transform 0.2s, box-shadow 0.2s;
-                text-align: left;
-            ">
-                📚 Dyslexia Demo Video
-            </button>
-            <button class="video-option-btn" data-link="${dysgraphiaLink}" style="
-                background: linear-gradient(135deg, ${primaryColor}, ${secondaryColor});
-                color: white;
-                border: none;
-                padding: 18px 24px;
-                border-radius: 16px;
-                font-size: 18px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: transform 0.2s, box-shadow 0.2s;
-                text-align: left;
-            ">
-                ✏️ Dysgraphia Demo Video
-            </button>
-            <button class="close-video-modal" style="
-                background: #F3F4F6;
-                color: #1F2937;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 12px;
-                font-size: 16px;
-                font-weight: 600;
-                cursor: pointer;
-                margin-top: 10px;
-            ">
-                Cancel
-            </button>
-        </div>
+        <button class="watch-video-btn" data-link="${videoLink}" style="
+            background: linear-gradient(135deg, ${primaryColor}, ${secondaryColor});
+            color: white;
+            border: none;
+            padding: 18px 32px;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            max-width: 300px;
+        ">
+            ▶️ Watch Video
+        </button>
+        <button class="close-demo-video-modal" style="
+            background: #F3F4F6;
+            color: #1F2937;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 300px;
+        ">
+            Cancel
+        </button>
     `;
     
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
     
-    // Add hover effects
-    const buttons = modal.querySelectorAll('.video-option-btn');
-    buttons.forEach(btn => {
-        btn.addEventListener('mouseenter', () => {
-            btn.style.transform = 'translateY(-2px)';
-            btn.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
-        });
-        btn.addEventListener('mouseleave', () => {
-            btn.style.transform = 'translateY(0)';
-            btn.style.boxShadow = 'none';
-        });
-        btn.addEventListener('click', () => {
-            const link = btn.getAttribute('data-link');
-            window.open(link, '_blank');
-            closeVideoModal();
+    // Watch video button functionality
+    const watchVideoBtn = modal.querySelector('.watch-video-btn');
+    watchVideoBtn.addEventListener('mouseenter', () => {
+        watchVideoBtn.style.transform = 'translateY(-2px)';
+        watchVideoBtn.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.4)';
+    });
+    watchVideoBtn.addEventListener('mouseleave', () => {
+        watchVideoBtn.style.transform = 'translateY(0)';
+        watchVideoBtn.style.boxShadow = 'none';
+    });
+    watchVideoBtn.addEventListener('click', () => {
+        const link = watchVideoBtn.getAttribute('data-link');
+        if (link && link.trim() !== '') {
+            window.open(link, '_blank', 'noopener,noreferrer');
             speak('Opening demo video');
             playSound('click');
-        });
+        }
+        closeDemoVideoModal();
     });
     
     // Close button
-    modal.querySelector('.close-video-modal').addEventListener('click', closeVideoModal);
+    modal.querySelector('.close-demo-video-modal').addEventListener('click', closeDemoVideoModal);
     
     // Close on overlay click
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
-            closeVideoModal();
+            closeDemoVideoModal();
         }
     });
     
     // Close on Escape key
     const handleEscape = (e) => {
         if (e.key === 'Escape') {
-            closeVideoModal();
+            closeDemoVideoModal();
             document.removeEventListener('keydown', handleEscape);
         }
     };
     document.addEventListener('keydown', handleEscape);
     
-    function closeVideoModal() {
+    function closeDemoVideoModal() {
         overlay.style.animation = 'fadeOut 0.3s ease';
         modal.style.animation = 'slideDown 0.3s ease';
         setTimeout(() => {
-            document.body.removeChild(overlay);
+            if (document.body.contains(overlay)) {
+                document.body.removeChild(overlay);
+            }
         }, 300);
         playSound('click');
     }
-    
-    // Add animations
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
-        @keyframes slideUp {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes slideDown {
-            from { transform: translateY(0); opacity: 1; }
-            to { transform: translateY(30px); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
 }
+
 
 // Confetti Effect
 function createConfetti() {
@@ -3341,10 +3313,12 @@ if (document.readyState === 'loading') {
     restoreSession();
 }
 
-// Handle direct /home route access - redirect to root with hash
-if (window.location.pathname === '/home') {
-    window.location.replace('/#home');
-}
+// Handle direct /home route access - DISABLED for React Router
+// React Router handles /home route, so we don't redirect here
+// This prevents interference with React Router navigation
+// if (window.location.pathname === '/home' && !window.__REACT_ROUTER_CONTEXT__) {
+//     window.location.replace('/#home');
+// }
 
 // Initialize hash navigation and smooth scrolling
 function initHashNavigation() {

@@ -44,7 +44,12 @@
                     if (parsed?.credential) {
                         // Session exists - check if we're on the login page and should redirect
                         const currentPath = window.location.pathname;
-                        const isLoginPage = currentPath === '/' || currentPath === '/index.html' || currentPath === '/index-react.html';
+                        const currentFile = currentPath.split('/').pop() || '';
+                        const isLoginPage = currentPath === '/' || 
+                                          currentPath === '/index.html' || 
+                                          currentPath.endsWith('/index.html') ||
+                                          currentFile === 'index.html' ||
+                                          currentPath === '/index-react.html';
                         
                         // If we're in an iframe, let parent handle redirect
                         if (window.parent !== window.self) {
@@ -167,7 +172,7 @@
                     <a href="#progress" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Progress</a>
                     <a href="sign-language.html" class="nav-item" role="menuitem" aria-describedby="keyboardHint" title="Sign Language Learning">🤟 Sign Language</a>
                     <a href="#parents" class="nav-item" role="menuitem" aria-describedby="keyboardHint" onclick="openParentsCommunity(event)">Parents</a>
-                    <a href="#feedback" class="nav-item" role="menuitem" aria-describedby="keyboardHint">Feedback</a>
+                    <a href="feedback.html" class="nav-item" role="menuitem" aria-describedby="keyboardHint" id="feedback-link">Feedback</a>
                     <a href="/aws-augmentability-main/index.html" class="nav-item superpower-link-bypass" role="menuitem" aria-describedby="keyboardHint" title="SuperPower - AWS AugmentAbility features" id="superpower-link">⚡ SuperPower</a>
                 </div>
 
@@ -212,7 +217,7 @@
                     BrightWords makes learning feel bold, fast, and joyful.
                 </h1>
                 <p class="hero-description">
-                    AI-powered personalized learning support for children with dyslexia and dysgraphia. Build confidence through interactive games, multisensory activities, and real-time feedback!
+                    AI-powered personalized learning support for Children who are specially abled. Build confidence through interactive games, multisensory activities, and real-time feedback!
                 </p>
                 <ul class="hero-highlights" aria-label="Key benefits">
                     <li>⚡ 5-minute missions</li>
@@ -368,98 +373,6 @@
             </div>
         </div>
         </main>
-
-        <!-- Feedback Section -->
-        <section class="feedback-section" id="feedback" role="region" aria-label="Feedback section">
-            <div class="section-header">
-                <h2 class="section-title">Give Your Feedback!</h2>
-                <p class="section-subtitle">
-                    Help us improve BrightWords by providing your valuable feedback. Your feedback will be used to improve the UI/UX of the website so that we can provide the best possible service to you!
-                </p>
-            </div>
-
-            <div class="feedback-grid">
-                <!-- Feedback Form 1: Overall Website -->
-                <div class="feedback-card">
-                    <div class="feedback-card-header">
-                        <span class="feedback-icon">🌐</span>
-                        <h3 class="feedback-card-title">Overall Website Feedback</h3>
-                    </div>
-                    <div class="feedback-card-body">
-                        <p class="feedback-card-description">
-                            Tell us what you think about the overall website design. Rate our webpage on various metrics like satisfaction, appearance, usability, and accessibility features.
-                        </p>
-                        <button class="feedback-btn" onclick="openFeedbackForm('overall')" aria-label="Open overall website feedback form">
-                            📝 Open Feedback Form
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Feedback Form 2: Learning Activities -->
-                <div class="feedback-card">
-                    <div class="feedback-card-header">
-                        <span class="feedback-icon">🎮</span>
-                        <h3 class="feedback-card-title">Learning Activities Feedback</h3>
-                    </div>
-                    <div class="feedback-card-body">
-                        <p class="feedback-card-description">
-                            Share your experience with our learning activities (Phonics Fun, Spelling Wizard, Story Explorer, Memory Master). Help us improve the educational content and gameplay.
-                        </p>
-                        <button class="feedback-btn" onclick="openFeedbackForm('activities')" aria-label="Open learning activities feedback form">
-                            📝 Open Feedback Form
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Feedback Form 3: Accessibility Features -->
-                <div class="feedback-card">
-                    <div class="feedback-card-header">
-                        <span class="feedback-icon">♿</span>
-                        <h3 class="feedback-card-title">Accessibility Features Feedback</h3>
-                    </div>
-                    <div class="feedback-card-body">
-                        <p class="feedback-card-description">
-                            Help us improve our accessibility features. Tell us how well the support profiles (Blind/Low Vision, Deaf/Hard of Hearing, Games) work for you and what we can improve.
-                        </p>
-                        <button class="feedback-btn" onclick="openFeedbackForm('accessibility')" aria-label="Open accessibility features feedback form">
-                            📝 Open Feedback Form
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Feedback Form 4: User Experience -->
-                <div class="feedback-card">
-                    <div class="feedback-card-header">
-                        <span class="feedback-icon">✨</span>
-                        <h3 class="feedback-card-title">User Experience Feedback</h3>
-                    </div>
-                    <div class="feedback-card-body">
-                        <p class="feedback-card-description">
-                            Share your thoughts on the user experience, navigation, ease of use, and overall satisfaction with BrightWords. Your input helps us create a better learning platform.
-                        </p>
-                        <button class="feedback-btn" onclick="openFeedbackForm('ux')" aria-label="Open user experience feedback form">
-                            📝 Open Feedback Form
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Feedback Form 5: New Features & Suggestions -->
-                <div class="feedback-card">
-                    <div class="feedback-card-header">
-                        <span class="feedback-icon">💡</span>
-                        <h3 class="feedback-card-title">Feature Suggestions</h3>
-                    </div>
-                    <div class="feedback-card-body">
-                        <p class="feedback-card-description">
-                            Have ideas for new features or improvements? Let us know what features you'd like to see added to BrightWords to make learning even better!
-                        </p>
-                        <button class="feedback-btn" onclick="openFeedbackForm('features')" aria-label="Open feature suggestions feedback form">
-                            📝 Open Feedback Form
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
     </div>
 
     <!-- Settings Panel -->
@@ -569,6 +482,69 @@
                 // Also setup after a delay to ensure it's processed
                 setTimeout(setupSuperPowerLink, 100);
                 setTimeout(setupSuperPowerLink, 500);
+            })();
+
+            // Feedback navigation - simple direct link to feedback.html
+            (function() {
+                const feedbackLink = document.getElementById('feedback-link');
+                if (feedbackLink) {
+                    // Ensure the link is accessible
+                    feedbackLink.style.pointerEvents = 'auto';
+                    feedbackLink.style.opacity = '1';
+                    feedbackLink.style.position = 'relative';
+                    feedbackLink.style.zIndex = '10000';
+                    console.log('Feedback link configured for navigation to feedback.html');
+                }
+            })();
+
+            // Handle hash navigation - scroll to home section when navigating with #home
+            (function() {
+                function handleHashNavigation() {
+                    // Wait for authentication check to complete
+                    const checkAuthAndScroll = () => {
+                        const AUTH_STORAGE_KEY = 'brightwords_google_user';
+                        try {
+                            const cached = localStorage.getItem(AUTH_STORAGE_KEY);
+                            if (cached) {
+                                const parsed = JSON.parse(cached);
+                                if (parsed?.credential) {
+                                    // User is authenticated - check if we need to scroll to home
+                                    if (window.location.hash === '#home' || window.location.hash === '') {
+                                        setTimeout(() => {
+                                            const homeSection = document.getElementById('home');
+                                            if (homeSection) {
+                                                homeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                            }
+                                        }, 300);
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Error checking auth for hash navigation:', e);
+                        }
+                    };
+
+                    // Check after a short delay to ensure page is unlocked
+                    setTimeout(checkAuthAndScroll, 500);
+                    
+                    // Also check on hash change
+                    window.addEventListener('hashchange', function() {
+                        if (window.location.hash === '#home') {
+                            setTimeout(() => {
+                                const homeSection = document.getElementById('home');
+                                if (homeSection) {
+                                    homeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
+                            }, 100);
+                        }
+                    });
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', handleHashNavigation);
+                } else {
+                    handleHashNavigation();
+                }
             })();
         </script>
     </div>

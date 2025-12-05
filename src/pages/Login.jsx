@@ -6,6 +6,9 @@ function Login() {
   const iframeRef = useRef(null)
 
   useEffect(() => {
+    // This component ONLY renders on the "/" route
+    // It should never interfere with /home or /feedback routes
+    
     // Check authentication immediately
     const AUTH_STORAGE_KEY = 'brightwords_google_user'
     const checkAuth = () => {

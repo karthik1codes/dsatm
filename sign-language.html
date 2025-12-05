@@ -53,6 +53,7 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            font-family: 'Nunito', sans-serif;
         }
         
         .back-button:hover {
@@ -120,6 +121,81 @@
             font-family: monospace;
             font-size: 14px;
         }
+
+        .subscription-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .subscription-modal {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .subscription-modal h2 {
+            font-family: 'Fredoka', cursive;
+            font-size: 28px;
+            color: var(--primary-purple);
+            margin-bottom: 15px;
+        }
+
+        .subscription-modal p {
+            font-size: 16px;
+            color: var(--light-text);
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .subscription-modal .emoji {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .modal-button {
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Nunito', sans-serif;
+            border: none;
+        }
+
+        .modal-button.primary {
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-pink));
+            color: white;
+        }
+
+        .modal-button.secondary {
+            background: #F3F4F6;
+            color: #374151;
+        }
+
+        .modal-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
         
         @media (max-width: 768px) {
             .sign-language-header {
@@ -140,26 +216,8 @@
 </head>
 <body>
     <script>
-        // Ensure the user is authenticated before allowing access to the Sign Language page
-        (function enforceAuthentication() {
-            const AUTH_STORAGE_KEY = 'brightwords_google_user';
-            try {
-                const cachedSession = localStorage.getItem(AUTH_STORAGE_KEY);
-                if (!cachedSession) {
-                    // No session found, redirect to main login page
-                    window.location.replace('index.html');
-                    return;
-                }
-                const parsed = JSON.parse(cachedSession);
-                if (!parsed?.credential) {
-                    throw new Error('Invalid session payload');
-                }
-            } catch (error) {
-                console.warn('Invalid session detected, redirecting to login.', error);
-                localStorage.removeItem('brightwords_google_user');
-                window.location.replace('index.html');
-            }
-        })();
+        // Authentication check removed - users should only login at the beginning
+        // Allow access to Sign Language page without redirecting to login
     </script>
     <div class="sign-language-page">
         <div class="sign-language-header">
@@ -167,9 +225,9 @@
                 <span style="font-size: 32px;">🤟</span>
                 <h1>Sign Language Learning</h1>
             </div>
-            <a href="index.html" class="back-button">
+            <button type="button" class="back-button" id="backToHomeBtn">
                 ← Back to Home
-            </a>
+            </button>
         </div>
         
         <div class="sign-language-container">
@@ -177,40 +235,121 @@
             <iframe 
                 id="signLanguageFrame"
                 class="sign-language-iframe" 
-                src="signtranslator/learnsign/client/build/index.html#/sign-kit/convert"
+                src=""
                 title="Sign Language Learning App"
                 allow="camera; microphone; autoplay"
-                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-downloads">
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-downloads"
+                style="display: none;">
             </iframe>
+        </div>
+    </div>
+
+    <!-- Subscription Required Modal -->
+    <div class="subscription-overlay" id="subscriptionOverlay">
+        <div class="subscription-modal">
+            <div class="emoji">🔒</div>
+            <h2>Subscription Required</h2>
+            <p>You need an active subscription to access the Sign Language Learning feature. Subscribe now to unlock unlimited sign language conversions, 3D avatar animations, and more!</p>
+            <div class="modal-buttons">
+                <button class="modal-button primary" onclick="goToSubscription()">
+                    View Plans & Subscribe
+                </button>
+                <button class="modal-button secondary" onclick="goToHome()">
+                    Back to Home
+                </button>
+            </div>
         </div>
     </div>
     
     <script>
-        // Add any initialization scripts here
-        console.log('Sign Language page loaded');
-        
-        // Handle back button
-        (function initBackButton() {
-            const backBtn = document.querySelector('.back-button');
-            if (!backBtn) return;
-
-            backBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-
-                const hasHistory = window.history.length > 1;
-                const referrer = document.referrer ? new URL(document.referrer, window.location.href) : null;
-                const sameOriginReferrer = referrer && referrer.origin === window.location.origin;
-
-                if (hasHistory && sameOriginReferrer) {
-                    // Return to previously authenticated page without reloading login flow
-                    window.history.back();
-                    return;
+        // Subscription checking and management
+        function checkSubscriptionStatus() {
+            try {
+                const stored = localStorage.getItem('sign_language_subscription');
+                if (!stored) {
+                    return false;
                 }
 
-                // Fallback to main home page (session will unlock automatically if already logged in)
-                window.location.href = 'index.html#home';
-            });
-        })();
+                const subscription = JSON.parse(stored);
+                if (!subscription || subscription.status !== 'active') {
+                    return false;
+                }
+
+                // Check if subscription has expired
+                const endDate = new Date(subscription.endDate);
+                const now = new Date();
+                
+                if (endDate <= now) {
+                    // Subscription expired
+                    localStorage.removeItem('sign_language_subscription');
+                    return false;
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Error checking subscription:', error);
+                return false;
+            }
+        }
+
+        function showSubscriptionModal() {
+            const overlay = document.getElementById('subscriptionOverlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+            }
+        }
+
+        function hideSubscriptionModal() {
+            const overlay = document.getElementById('subscriptionOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+
+        function goToSubscription() {
+            window.location.href = 'subscription.html';
+        }
+
+        function goToHome() {
+            window.location.href = 'index.html#home';
+        }
+
+        function loadSignLanguageFeature() {
+            const iframe = document.getElementById('signLanguageFrame');
+            if (iframe) {
+                iframe.src = 'signtranslator/learnsign/client/build/index.html#/sign-kit/convert';
+                iframe.style.display = 'block';
+            }
+        }
+
+        // Check subscription on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const hasActiveSubscription = checkSubscriptionStatus();
+            
+            if (hasActiveSubscription) {
+                // User has active subscription - load the feature
+                loadSignLanguageFeature();
+            } else {
+                // No active subscription - show modal
+                showSubscriptionModal();
+            }
+
+            // Set up back button
+            const backButton = document.getElementById('backToHomeBtn');
+            if (backButton) {
+                backButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navigateToHome();
+                    return false;
+                });
+            }
+        });
+
+        // Function to navigate to home page
+        function navigateToHome() {
+            window.location.href = 'index.html#home';
+        }
     </script>
 </body>
 </html>
