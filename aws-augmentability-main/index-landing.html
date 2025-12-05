@@ -9,6 +9,7 @@
         <script src="https://kit.fontawesome.com/692060e681.js" crossorigin="anonymous"></script>
         <link rel="stylesheet" href="style/shoelace.css" />
         <link rel="stylesheet" href="style/styles.css" />
+        <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700&display=swap" rel="stylesheet">
 
         <script src="https://cdn.lordicon.com/libs/frhvbuzj/lord-icon-2.0.2.js"></script>
 
@@ -16,117 +17,180 @@
         <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png" />
         <link rel="manifest" href="manifest.json" crossorigin="use-credentials" />
+
+        <style>
+            :root {
+                --bg-gradient: linear-gradient(180deg, #fef3c7 0%, #fdf2f8 35%, #e0e7ff 100%);
+                --card-bg: #ffffff;
+                --card-shadow: 0 14px 40px rgba(100, 116, 139, 0.15);
+                --primary: #7c3aed;
+                --accent: #f97316;
+                --text: #0f172a;
+                --muted: #475569;
+                --border: #e5e7eb;
+                --pill: #ede9fe;
+            }
+
+            * { box-sizing: border-box; }
+
+            body {
+                margin: 0;
+                font-family: 'Nunito', 'Fredoka', 'Inter', system-ui, -apple-system, sans-serif;
+                background: var(--bg-gradient);
+                color: var(--text);
+                min-height: 100vh;
+            }
+
+            .page {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding: 32px 18px 56px;
+            }
+
+            .hero {
+                text-align: center;
+                margin-bottom: 28px;
+            }
+
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 14px;
+                border-radius: 999px;
+                background: var(--pill);
+                color: var(--primary);
+                font-weight: 700;
+                font-size: 14px;
+                letter-spacing: 0.2px;
+            }
+
+            .hero h1 {
+                font-size: clamp(28px, 5vw, 36px);
+                margin: 12px 0 8px;
+                font-weight: 700;
+                color: var(--text);
+            }
+
+            .hero p {
+                margin: 0;
+                color: var(--muted);
+                font-size: 16px;
+            }
+
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 16px;
+                margin-top: 24px;
+            }
+
+            .card {
+                background: var(--card-bg);
+                border-radius: 16px;
+                padding: 18px 16px;
+                box-shadow: var(--card-shadow);
+                border: 1px solid var(--border);
+                text-decoration: none;
+                color: inherit;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+            }
+
+            .card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 16px 40px rgba(124, 58, 237, 0.18);
+                border-color: rgba(124, 58, 237, 0.25);
+            }
+
+            .card h4 {
+                margin: 0;
+                font-size: 17px;
+                font-weight: 700;
+                text-align: center;
+                color: var(--text);
+            }
+
+            .card p {
+                margin: 0;
+                text-align: center;
+                color: var(--muted);
+                font-size: 14px;
+                line-height: 1.5;
+            }
+
+            .footer {
+                margin-top: 32px;
+                text-align: center;
+                color: var(--muted);
+                font-size: 14px;
+            }
+
+            .footer a {
+                color: var(--primary);
+                text-decoration: none;
+                font-weight: 700;
+            }
+        </style>
     </head>
 
     <body>
-        <div>
-            <br />
-
-            <h2 style="text-align: center;">
-                <b>AWS AugmentAbility</b>
-            </h2>
-
-            <br />
-
-            <h3 style="text-align: center;">
-                What superpower do you need today? <br /> &#129464;  
-            </h3>
-
-            <br />
-            <br />
-
-            <h4 style="text-align: center;">
-                Hearing & Speaking
-            </h4>
-
-            <a href="f-hear-speak.html">
-                <div class="card">
-                    <h5 style="text-align: center;">
-                        Live transcription and text-to-speech
-                    </h5>
-                    <lord-icon src="https://cdn.lordicon.com/fpipqhrr.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width: 70px; height: 70px;"> </lord-icon>
+        <div class="page">
+            <header class="hero">
+                <div class="badge">
+                    🤟 Inclusive AI
                 </div>
-            </a>
+                <h1>AWS AugmentAbility</h1>
+                <p>Pick a superpower to assist hearing, speaking, or seeing.</p>
+            </header>
 
-            <br />
-            <br />
-            <br />
+            <section class="grid">
+                <a class="card" href="f-hear-speak.html">
+                    <lord-icon src="https://cdn.lordicon.com/fpipqhrr.json" trigger="loop" colors="primary:#7c3aed,secondary:#f97316" style="width: 72px; height: 72px;"></lord-icon>
+                    <h4>Live transcription & text-to-speech</h4>
+                    <p>Hear conversations in real time or turn your voice into clear text.</p>
+                </a>
 
-            <a href="f-hear-speak-translate.html">
-                <div class="card">
-                    <h5 style="text-align: center;">
-                        Live transcription and text-to-speech with translation
-                    </h5>
-                    <lord-icon src="https://cdn.lordicon.com/hciqteio.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width: 70px; height: 70px;"> </lord-icon>
-                </div>
-            </a>
+                <a class="card" href="f-hear-speak-translate.html">
+                    <lord-icon src="https://cdn.lordicon.com/hciqteio.json" trigger="loop" colors="primary:#7c3aed,secondary:#f97316" style="width: 72px; height: 72px;"></lord-icon>
+                    <h4>Transcription with translation</h4>
+                    <p>Get instant captions translated to your preferred language.</p>
+                </a>
 
-            <br />
-            <br />
-            <br />
+                <a class="card" href="f-conversation.html">
+                    <lord-icon src="https://cdn.lordicon.com/zpxybbhl.json" trigger="loop" colors="primary:#7c3aed,secondary:#f97316" style="width: 72px; height: 72px;"></lord-icon>
+                    <h4>Conversation companion</h4>
+                    <p>Hold smooth, real-time multilingual conversations.</p>
+                </a>
 
-            <h4 style="text-align: center;">
-                Having a conversation in a foreign language
-            </h4>
+                <a class="card" href="f-see-objects-nav.html">
+                    <lord-icon src="https://cdn.lordicon.com/tyounuzx.json" trigger="loop" colors="primary:#7c3aed,secondary:#f97316" style="width: 72px; height: 72px;"></lord-icon>
+                    <h4>Help me see around</h4>
+                    <p>Get guided descriptions of objects and surroundings.</p>
+                </a>
 
-            <a href="f-conversation.html">
-                <div class="card">
-                    <h5 style="text-align: center;">
-                        Real-time conversation translation
-                    </h5>
-                    <lord-icon src="https://cdn.lordicon.com/zpxybbhl.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width: 70px; height: 70px;"> </lord-icon>
-                </div>
-            </a>
+                <a class="card" href="f-see-text-nav.html">
+                    <lord-icon src="https://cdn.lordicon.com/zbopvjaq.json" trigger="loop" colors="primary:#7c3aed,secondary:#f97316" style="width: 72px; height: 72px;"></lord-icon>
+                    <h4>Read labels & signs</h4>
+                    <p>Point your camera to read signs, menus, and everyday text.</p>
+                </a>
 
-            <br />
-            <br />
-            <br />
+                <a class="card" href="f-see-document-nav.html">
+                    <lord-icon src="https://cdn.lordicon.com/nocovwne.json" trigger="loop" colors="primary:#7c3aed,secondary:#f97316" style="width: 72px; height: 72px;"></lord-icon>
+                    <h4>Read documents</h4>
+                    <p>Upload pages for clean, accurate reading assistance.</p>
+                </a>
+            </section>
 
-            <h4 style="text-align: center;">
-                Seeing & Reading
-            </h4>
-
-            <a href="./f-see-objects-nav.html">
-                <div class="card">
-                    <h5 style="text-align: center;">
-                        Help me see around
-                    </h5>
-                    <lord-icon src="https://cdn.lordicon.com/tyounuzx.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width: 70px; height: 70px;"> </lord-icon>
-                </div>
-            </a>
-
-            <br />
-            <br />
-            <br />
-
-            <a href="./f-see-text-nav.html">
-                <div class="card">
-                    <h5 style="text-align: center;">
-                        Help me read labels & signs
-                    </h5>
-                    <lord-icon src="https://cdn.lordicon.com/zbopvjaq.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width: 70px; height: 70px;"> </lord-icon>
-                </div>
-            </a>
-
-            <br />
-            <br />
-            <br />
-
-            <a href="./f-see-document-nav.html">
-                <div class="card">
-                    <h5 style="text-align: center;">
-                        Help me read documents
-                    </h5>
-                    <lord-icon src="https://cdn.lordicon.com/nocovwne.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width: 70px; height: 70px;"> </lord-icon>
-                </div>
-            </a>
-
-            <br />
-            <br />
-            <br />
-
-            <p> <a href="https://github.com/aws-samples/aws-augmentability" >Source code</a> - <a href="https://raw.githubusercontent.com/aws-samples/aws-augmentability/main/THIRD_PARTY_LICENSES" >Credits</p>
-
+            <div class="footer">
+                <p>
+                    <a href="https://github.com/aws-samples/aws-augmentability">Source code</a> •
+                    <a href="https://raw.githubusercontent.com/aws-samples/aws-augmentability/main/THIRD_PARTY_LICENSES">Credits</a>
+                </p>
+            </div>
         </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
