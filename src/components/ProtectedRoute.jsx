@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 /**
  * ProtectedRoute component - wraps routes that require authentication
  * Uses both async and sync checks to prevent race conditions
- * Redirects to /signin with replace: true if not authenticated
+ * Redirects to /login with replace: true if not authenticated
  */
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading, checkAuthSync } = useAuth()
@@ -27,11 +27,9 @@ const ProtectedRoute = ({ children }) => {
     )
   }
 
-  // Check both async and sync - if either says authenticated, allow access
-  // This prevents race conditions where sync check finds session but async hasn't updated yet
   if (!isAuthenticated && !hasValidSession) {
-    // Redirect to /signin with replace: true so back button cannot return to protected pages
-    return <Navigate to="/signin" replace />
+    // Redirect to /login with replace: true so back button cannot return to protected pages
+    return <Navigate to="/login" replace />
   }
 
   // User is authenticated (either way), render the protected content

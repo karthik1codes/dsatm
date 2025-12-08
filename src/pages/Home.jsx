@@ -6,12 +6,11 @@ import { useAccessibility } from '../context/AccessibilityContext'
 import { useAuth } from '../context/AuthContext'
 import { useAnnouncement } from '../hooks/useAnnouncement'
 import '../styles/Home.css'
-import '../../styles.css'
 
 const Home = () => {
   const navigate = useNavigate()
   const { accessibilityMode } = useAccessibility()
-  const { currentUser } = useAuth()
+  const { currentUser, signOut } = useAuth()
   const announce = useAnnouncement()
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [stats, setStats] = useState({
@@ -23,6 +22,13 @@ const Home = () => {
   })
   const [showSettings, setShowSettings] = useState(false)
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0)
+  const [showDemoModal, setShowDemoModal] = useState(false)
+  const [showParentsModal, setShowParentsModal] = useState(false)
+  const [settingsState, setSettingsState] = useState({
+    tts: true,
+    hints: true,
+    sound: true,
+  })
 
   const supportProfiles = {
     general: {
@@ -76,20 +82,27 @@ const Home = () => {
     },
   ]
 
-  // Load stats from localStorage
+  // Fetch stats from backend (no localStorage)
   useEffect(() => {
-    const loadStats = () => {
+    const fetchStats = async () => {
+      if (!currentUser?.email) return
       try {
-        const stored = localStorage.getItem('brightwords_stats')
-        if (stored) {
-          setStats(JSON.parse(stored))
-        }
+        const res = await fetch(`http://localhost:3000/api/stats/${encodeURIComponent(currentUser.email)}?name=${encodeURIComponent(currentUser.name || currentUser.given_name || '')}`)
+        if (!res.ok) throw new Error('Failed to fetch stats')
+        const data = await res.json()
+        setStats({
+          totalPoints: data.total_points || 0,
+          lessonsComplete: data.lessons_complete || 0,
+          achievements: data.achievements || 0,
+          timeSpent: data.time_spent || 0,
+          streak: data.streak || 0,
+        })
       } catch (error) {
-        console.warn('Error loading stats:', error)
+        console.warn('Error fetching stats:', error)
       }
     }
-    loadStats()
-  }, [])
+    fetchStats()
+  }, [currentUser])
 
   // Carousel auto-play
   useEffect(() => {
@@ -114,9 +127,13 @@ const Home = () => {
     }
   }
 
+  const handleStartPhonics = () => {
+    announce('Opening Phonics Fun activity')
+    navigate('/funactivities')
+  }
+
   const handleWatchDemo = () => {
-    // Open demo video or modal
-    announce('Demo video feature coming soon')
+    setShowDemoModal(true)
   }
 
   return (
@@ -142,7 +159,11 @@ const Home = () => {
       </div>
 
       <div className="main-container">
-        <Navigation onStartLearning={handleStartLearning} onOpenSettings={() => setShowSettings(true)} />
+        <Navigation
+          onStartLearning={handleStartLearning}
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenParents={() => setShowParentsModal(true)}
+        />
 
         <main id="mainContent" role="main" tabIndex={-1}>
           {/* Hero Section */}
@@ -264,14 +285,136 @@ const Home = () => {
             </div>
 
             <div className="support-feature-panel" id="supportFeaturePanel" aria-live="polite">
-              <div className="support-widget" style={{ textAlign: 'center', padding: '40px 20px' }}>
-                <h3 style={{ color: 'var(--primary-purple)', marginBottom: '16px' }}>
-                  👆 Choose Your Support Profile
-                </h3>
-                <p style={{ color: 'var(--light-text)', fontSize: '15px', lineHeight: 1.6 }}>
-                  Select a profile above to unlock personalized learning tools and features tailored to your needs!
-                </p>
-              </div>
+              {!selectedCategory && (
+                <div className="support-widget" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <h3 style={{ color: 'var(--primary-purple)', marginBottom: '16px' }}>
+                    👆 Choose Your Support Profile
+                  </h3>
+                  <p style={{ color: 'var(--light-text)', fontSize: '15px', lineHeight: 1.6 }}>
+                    Select a profile above to unlock personalized learning tools and features tailored to your needs!
+                  </p>
+                </div>
+              )}
+
+              {selectedCategory === 'blind' && (
+                <div className="support-widget" style={{ padding: '28px', textAlign: 'left' }}>
+                  <h3 style={{ color: '#1f2937', marginBottom: '12px' }}>
+                    🔊 Activities for Blind / Low Vision
+                  </h3>
+                  <p style={{ color: '#4b5563', marginBottom: '16px', lineHeight: 1.6 }}>
+                    Practice phonics and spelling with richer speech feedback and high-contrast visuals tailored for low vision learners.
+                  </p>
+                  <div style={{ display: 'grid', gap: '12px' }}>
+                    <button
+                      className="btn-primary"
+                      onClick={handleStartPhonics}
+                      aria-label="Start Phonics Fun activity"
+                    >
+                      🔤 Phonics Fun
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => navigate('/funactivities#spelling')}
+                      aria-label="Start Spelling Wizard"
+                    >
+                      ✏️ Spelling Wizard
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => navigate('/funactivities')}
+                      aria-label="Explore all fun activities"
+                    >
+                      Explore all fun activities
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {selectedCategory === 'neurodiverse' && (
+                <div className="support-widget" style={{ padding: '28px', textAlign: 'left' }}>
+                  <h3 style={{ color: '#1f2937', marginBottom: '12px' }}>
+                    🎮 Games mode activities
+                  </h3>
+                  <p style={{ color: '#4b5563', marginBottom: '16px', lineHeight: 1.6 }}>
+                    Jump into our game-based learning activities tailored for focus and fun.
+                  </p>
+                  <div style={{ display: 'grid', gap: '12px' }}>
+                    <button
+                      className="btn-primary"
+                      onClick={() => navigate('/funactivities#memory')}
+                      aria-label="Start Memory Master"
+                    >
+                      🧠 Memory Master
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => navigate('/funactivities#stories')}
+                      aria-label="Start Story Creator"
+                    >
+                      🚀 Story Creator
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => navigate('/funactivities')}
+                      aria-label="Explore all fun activities"
+                    >
+                      Explore all fun activities
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {selectedCategory === 'deaf' && (
+                <div className="support-widget" style={{ padding: '28px', textAlign: 'left' }}>
+                  <h3 style={{ color: '#1f2937', marginBottom: '12px' }}>
+                    ✏️ Activities for Deaf / Hard of Hearing
+                  </h3>
+                  <p style={{ color: '#4b5563', marginBottom: '16px', lineHeight: 1.6 }}>
+                    Focus on visual guidance and structured steps. Try Writing Artist or Story Explorer.
+                  </p>
+                  <div style={{ display: 'grid', gap: '12px' }}>
+                    <button
+                      className="btn-primary"
+                      onClick={() => navigate('/funactivities#writing')}
+                      aria-label="Start Writing Artist"
+                    >
+                      🎨 Writing Artist
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => navigate('/funactivities#reading')}
+                      aria-label="Start Story Explorer"
+                    >
+                      📖 Story Explorer
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => navigate('/funactivities')}
+                      aria-label="Explore all fun activities"
+                    >
+                      Explore all fun activities
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {selectedCategory && selectedCategory !== 'blind' && selectedCategory !== 'neurodiverse' && (
+                <div className="support-widget" style={{ padding: '28px', textAlign: 'left' }}>
+                  <h3 style={{ color: '#1f2937', marginBottom: '12px' }}>
+                    Personalized tools for {selectedCategory === 'deaf' ? 'Deaf / Hard of Hearing' : selectedCategory === 'neurodiverse' ? 'Games' : 'General learners'}
+                  </h3>
+                  <p style={{ color: '#4b5563', marginBottom: '12px', lineHeight: 1.6 }}>
+                    Continue exploring activities tailored to this profile. Try Fun Activities to get started.
+                  </p>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => navigate('/funactivities')}
+                    aria-label="Go to Fun Activities"
+                  >
+                    Explore Fun Activities
+                  </button>
+                </div>
+              )}
             </div>
           </section>
 
@@ -305,18 +448,6 @@ const Home = () => {
             <h3 className="queries-title" style={{ fontFamily: "'Fredoka', cursive", fontSize: '20px', fontWeight: 600, color: '#8B5CF6', marginBottom: '16px', textAlign: 'center', display: 'block' }}>For Any Queries</h3>
             <div className="social-icons" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px', flexWrap: 'wrap', width: '100%' }}>
               <a 
-                href="https://mail.google.com/mail/u/1/#inbox" 
-                className="social-icon gmail-icon"
-                aria-label="Contact us via Gmail"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '50%', background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', textDecoration: 'none', cursor: 'pointer', visibility: 'visible', opacity: 1 }}
-              >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.546l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z" fill="#EA4335"/>
-                </svg>
-              </a>
-              <a 
                 href="https://www.instagram.com/brightwords.in/" 
                 className="social-icon instagram-icon"
                 aria-label="Follow us on Instagram"
@@ -346,6 +477,258 @@ const Home = () => {
           <p>All Rights Reserved</p>
         </footer>
       </div>
+
+      {/* Watch Demo Modal */}
+      {showDemoModal && (
+        <div
+          className="demo-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="demoModalTitle"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowDemoModal(false)
+          }}
+        >
+          <div className="demo-modal">
+            <h3 id="demoModalTitle">Want to know what is a disability?</h3>
+            <p>We can guide you to a short video that explains it clearly.</p>
+            <div className="demo-modal-actions">
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  window.open('https://www.youtube.com/watch?v=dm7uXtpNiAQ&t=4s', '_blank', 'noopener,noreferrer')
+                  setShowDemoModal(false)
+                  announce('Opening YouTube video in a new tab')
+                }}
+              >
+                ▶️ Watch Video
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  setShowDemoModal(false)
+                  announce('Video canceled')
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Parents Community Modal */}
+      {showParentsModal && (
+        <div
+          className="demo-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="parentsModalTitle"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowParentsModal(false)
+          }}
+        >
+          <div className="demo-modal">
+            <h3 id="parentsModalTitle">Join the Parents Community</h3>
+            <p>Connect with other parents via WhatsApp or Facebook.</p>
+            <div className="demo-modal-actions">
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  window.open('https://chat.whatsapp.com/BSkBimGGf4mLmXS7nmO6v5', '_blank', 'noopener,noreferrer')
+                  setShowParentsModal(false)
+                  announce('Opening WhatsApp community')
+                }}
+              >
+                <svg className="community-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path
+                    fill="#25D366"
+                    d="M20.52 3.48A11.86 11.86 0 0 0 12.04.08 11.86 11.86 0 0 0 3.5 3.48a11.86 11.86 0 0 0-3.4 8.53 11.87 11.87 0 0 0 1.68 6.08L.09 24l6-1.57a12 12 0 0 0 5.99 1.57h.01c3.19 0 6.19-1.24 8.45-3.5a11.86 11.86 0 0 0 3.5-8.44 11.84 11.84 0 0 0-3.52-8.58Zm-8.48 18.4h-.01a9.77 9.77 0 0 1-4.99-1.36l-.36-.21-3.56.93.95-3.46-.23-.36A9.79 9.79 0 0 1 2.2 12 9.8 9.8 0 0 1 5.08 4.9 9.8 9.8 0 0 1 12.05 2c2.62 0 5.09 1.02 6.95 2.88a9.8 9.8 0 0 1 2.88 6.96 9.8 9.8 0 0 1-2.88 6.95 9.8 9.8 0 0 1-6.96 2.87Zm5.38-7.36c-.29-.15-1.7-.84-1.96-.94-.26-.1-.45-.15-.64.15-.19.29-.74.94-.91 1.13-.17.19-.34.22-.63.07-.29-.15-1.23-.45-2.34-1.44-.86-.76-1.44-1.7-1.61-1.99-.17-.29-.02-.45.13-.6.14-.14.29-.34.44-.51.15-.17.2-.29.29-.48.1-.19.05-.36-.03-.51-.08-.15-.64-1.53-.88-2.1-.23-.55-.47-.48-.64-.49h-.55c-.19 0-.5.07-.76.36-.26.29-1 1-1 2.45 0 1.45 1.02 2.85 1.16 3.04.14.19 2 3.05 4.85 4.28.68.29 1.21.46 1.62.59.68.22 1.3.19 1.79.12.55-.08 1.7-.7 1.94-1.38.24-.67.24-1.24.17-1.38-.07-.14-.26-.22-.55-.36Z"
+                  />
+                </svg>
+                WhatsApp Community
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  window.open('https://www.facebook.com/share/g/17Y2s832XB/', '_blank', 'noopener,noreferrer')
+                  setShowParentsModal(false)
+                  announce('Opening Facebook community')
+                }}
+              >
+                <svg className="community-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path
+                    fill="#1877F2"
+                    d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 22.99 10.125 24v-8.438H7.078v-3.49h3.047V9.356c0-3.018 1.792-4.688 4.533-4.688 1.312 0 2.686.235 2.686.235v2.953h-1.513c-1.49 0-1.953.931-1.953 1.887v2.266h3.328l-.532 3.489H13.88V24C19.612 22.99 24 18.1 24 12.073Z"
+                  />
+                </svg>
+                Facebook Community
+              </button>
+            </div>
+            <div className="demo-modal-actions" style={{ marginTop: '10px' }}>
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  setShowParentsModal(false)
+                  announce('Community selection canceled')
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Drawer */}
+      {showSettings && (
+        <div
+          className="demo-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="settingsTitle"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowSettings(false)
+          }}
+        >
+          <div
+            className="demo-modal"
+            style={{ maxWidth: 360, textAlign: 'left' }}
+            role="document"
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 id="settingsTitle" style={{ margin: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span role="img" aria-hidden="true">⚙️</span> Settings
+              </h3>
+              <button
+                aria-label="Close settings"
+                onClick={() => setShowSettings(false)}
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: '50%',
+                  border: '1px solid #e6e6ef',
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontSize: 18,
+                  padding: 0,
+                  background: '#f8f8fb',
+                  color: '#111',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 10px',
+                borderRadius: 14,
+                background: '#f4f4fb',
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+                  color: '#fff',
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontWeight: 800,
+                }}
+              >
+                {(currentUser?.name || currentUser?.given_name || 'Guest')[0] || 'G'}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, color: '#1f2937' }}>
+                  {currentUser?.name || currentUser?.given_name || 'Guest'}
+                </div>
+                <div style={{ fontSize: 14, color: '#4b5563' }}>
+                  {currentUser?.email || 'guest@brightwords.local'}
+                </div>
+              </div>
+            </div>
+
+            {[
+              { key: 'tts', label: 'Text-to-Speech', emoji: '🔊' },
+              { key: 'hints', label: 'Visual Hints', emoji: '💡' },
+              { key: 'sound', label: 'Sound Effects', emoji: '🎵' },
+            ].map((item) => (
+              <div
+                key={item.key}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 0',
+                  borderBottom: '1px solid #e5e7eb',
+                }}
+              >
+                <span style={{ color: '#111827', fontWeight: 600 }}>
+                  {item.emoji} {item.label}
+                </span>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={settingsState[item.key]}
+                    onChange={() =>
+                      setSettingsState((prev) => ({
+                        ...prev,
+                        [item.key]: !prev[item.key],
+                      }))
+                    }
+                    style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }}
+                  />
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 46,
+                      height: 26,
+                      background: settingsState[item.key] ? '#8B5CF6' : '#e5e7eb',
+                      borderRadius: 999,
+                      position: 'relative',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: 3,
+                        left: settingsState[item.key] ? 22 : 4,
+                        width: 20,
+                        height: 20,
+                        background: '#fff',
+                        borderRadius: '50%',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    />
+                  </span>
+                </label>
+              </div>
+            ))}
+
+            <div style={{ paddingTop: 12 }}>
+              <button
+                className="btn-secondary"
+                style={{ width: '100%', textAlign: 'center' }}
+                onClick={() => {
+                  signOut(() => setShowSettings(false))
+                  setShowSettings(false)
+                }}
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

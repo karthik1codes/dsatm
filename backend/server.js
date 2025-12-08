@@ -63,6 +63,25 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 console.log('Subscriptions table ready');
             }
         });
+
+        // User stats table
+        db.run(`CREATE TABLE IF NOT EXISTS user_stats (
+            user_email TEXT PRIMARY KEY,
+            user_name TEXT,
+            total_points INTEGER DEFAULT 0,
+            lessons_complete INTEGER DEFAULT 0,
+            achievements INTEGER DEFAULT 0,
+            time_spent INTEGER DEFAULT 0,
+            streak INTEGER DEFAULT 0,
+            last_activity TEXT,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )`, (err) => {
+            if (err) {
+                console.error('Error creating user_stats table:', err.message);
+            } else {
+                console.log('User stats table ready');
+            }
+        });
     }
 });
 
@@ -146,6 +165,121 @@ function generateReceiptId(userEmail, planType) {
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'BrightWords Subscription API is running' });
+});
+
+// Helpers for stats
+function getOrCreateStats(email, name, cb) {
+    const safeEmail = (email || '').toLowerCase();
+    if (!safeEmail) return cb(new Error('Email is required'));
+    db.get('SELECT * FROM user_stats WHERE user_email = ?', [safeEmail], (err, row) => {
+        if (err) return cb(err);
+        if (row) return cb(null, row);
+        const now = new Date().toISOString().slice(0, 10);
+        db.run(
+            `INSERT INTO user_stats (user_email, user_name, streak, last_activity) VALUES (?, ?, ?, ?)`,
+            [safeEmail, name || '', 1, now],
+            function (insertErr) {
+                if (insertErr) return cb(insertErr);
+                db.get('SELECT * FROM user_stats WHERE user_email = ?', [safeEmail], cb);
+            }
+        );
+    });
+}
+
+function computeStreak(row) {
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    if (!row.last_activity) {
+        return { streak: 1, last_activity: todayStr };
+    }
+    const last = new Date(row.last_activity);
+    const diffDays = Math.floor((today - last) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) {
+        return { streak: row.streak, last_activity: todayStr };
+    }
+    if (diffDays === 1) {
+        return { streak: row.streak + 1, last_activity: todayStr };
+    }
+    // missed a day
+    return { streak: 1, last_activity: todayStr };
+}
+
+// Get stats
+app.get('/api/stats/:email', (req, res) => {
+    const email = (req.params.email || '').toLowerCase();
+    const name = req.query.name || '';
+    getOrCreateStats(email, name, (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: 'Failed to fetch stats' });
+        }
+        const computed = computeStreak(row);
+        db.run(
+            `UPDATE user_stats SET streak = ?, last_activity = ?, updated_at = CURRENT_TIMESTAMP WHERE user_email = ?`,
+            [computed.streak, computed.last_activity, email],
+            (uErr) => {
+                if (uErr) {
+                    return res.status(500).json({ error: 'Failed to update streak' });
+                }
+                return res.json({
+                    user_email: email,
+                    user_name: row.user_name,
+                    total_points: row.total_points,
+                    lessons_complete: row.lessons_complete,
+                    achievements: row.achievements,
+                    time_spent: row.time_spent,
+                    streak: computed.streak,
+                    last_activity: computed.last_activity
+                });
+            }
+        );
+    });
+});
+
+// Update stats (incremental)
+app.post('/api/stats/update', (req, res) => {
+    const { userEmail, userName, totalPoints = 0, lessonsComplete = 0, achievements = 0, timeSpent = 0 } = req.body || {};
+    const email = (userEmail || '').toLowerCase();
+    if (!email) {
+        return res.status(400).json({ error: 'userEmail is required' });
+    }
+    getOrCreateStats(email, userName, (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: 'Failed to fetch stats' });
+        }
+        const computed = computeStreak(row);
+        const newTotals = {
+            total_points: row.total_points + Number(totalPoints || 0),
+            lessons_complete: row.lessons_complete + Number(lessonsComplete || 0),
+            achievements: row.achievements + Number(achievements || 0),
+            time_spent: row.time_spent + Number(timeSpent || 0),
+            streak: computed.streak,
+            last_activity: computed.last_activity
+        };
+        db.run(
+            `UPDATE user_stats
+             SET total_points = ?, lessons_complete = ?, achievements = ?, time_spent = ?, streak = ?, last_activity = ?, user_name = ?, updated_at = CURRENT_TIMESTAMP
+             WHERE user_email = ?`,
+            [
+                newTotals.total_points,
+                newTotals.lessons_complete,
+                newTotals.achievements,
+                newTotals.time_spent,
+                newTotals.streak,
+                newTotals.last_activity,
+                userName || row.user_name || '',
+                email
+            ],
+            (uErr) => {
+                if (uErr) {
+                    return res.status(500).json({ error: 'Failed to update stats' });
+                }
+                return res.json({
+                    user_email: email,
+                    ...newTotals
+                });
+            }
+        );
+    });
 });
 
 // Create Razorpay order

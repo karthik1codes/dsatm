@@ -1,14 +1,15 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAccessibility } from '../context/AccessibilityContext'
 import { useAuth } from '../context/AuthContext'
 import { useAnnouncement } from '../hooks/useAnnouncement'
 import '../styles/Navigation.css'
 
-const Navigation = ({ onStartLearning, onOpenSettings }) => {
+const Navigation = ({ onStartLearning, onOpenSettings, onOpenParents }) => {
   const { accessibilityMode, toggleAccessibilityMode } = useAccessibility()
   const { currentUser, signOut } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const announce = useAnnouncement()
   const [showSignOut, setShowSignOut] = useState(false)
 
@@ -18,7 +19,6 @@ const Navigation = ({ onStartLearning, onOpenSettings }) => {
   }
 
   const handleSignOut = () => {
-    // signOut will handle navigation with replace: true
     signOut(navigate)
     announce('Signed out successfully')
   }
@@ -39,47 +39,33 @@ const Navigation = ({ onStartLearning, onOpenSettings }) => {
         </Link>
 
         <div className="nav-menu" role="menubar" aria-label="Primary menu">
-          <a
-            href="#home"
+          <Link
+            to="/funactivities"
             className="nav-item"
             role="menuitem"
-            onClick={(e) => {
-              e.preventDefault()
-              const homeSection = document.getElementById('home')
-              if (homeSection) {
-                homeSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              }
-            }}
-          >
-            Home
-          </a>
-          <a
-            href="#support"
-            className="nav-item"
-            role="menuitem"
-            onClick={(e) => {
-              e.preventDefault()
-              if (onStartLearning) onStartLearning()
-            }}
+            title="Interactive practice modules"
           >
             Learn
-          </a>
-          <a
-            href="#progress"
+          </Link>
+          <Link
+            to={location.pathname === '/home' ? '#progress' : '/home#progress'}
             className="nav-item"
             role="menuitem"
             onClick={(e) => {
-              e.preventDefault()
-              const progressSection = document.getElementById('progress')
-              if (progressSection) {
-                progressSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              // Smooth scroll when already on home
+              if (location.pathname === '/home') {
+                e.preventDefault()
+                const progressSection = document.getElementById('progress')
+                if (progressSection) {
+                  progressSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
               }
             }}
           >
             Progress
-          </a>
+          </Link>
           <Link
-            to="/sign-language"
+            to="/signlanguage"
             className="nav-item"
             role="menuitem"
             title="Sign Language Learning"
@@ -87,27 +73,27 @@ const Navigation = ({ onStartLearning, onOpenSettings }) => {
             Sign Language
           </Link>
           <a
-            href="#parents"
+            href="#communities"
             className="nav-item"
             role="menuitem"
             onClick={(e) => {
               e.preventDefault()
-              // Open parents community modal if function exists
+              if (onOpenParents) onOpenParents()
             }}
           >
-            Parents
+            Communities
           </a>
           <Link to="/feedback" className="nav-item" role="menuitem">
             Feedback
           </Link>
-          <a
-            href="/aws-augmentability-main/login.html"
+          <Link
+            to="/superpower"
             className="nav-item superpower-link-bypass"
             role="menuitem"
             title="SuperPower - AWS AugmentAbility features"
           >
             SuperPower
-          </a>
+          </Link>
         </div>
 
         <div className="user-section" aria-label="User quick actions">
@@ -138,21 +124,9 @@ const Navigation = ({ onStartLearning, onOpenSettings }) => {
           </div>
           <div className="user-auth">
             {currentUser && (
-              <>
-                <span className="user-greeting" aria-live="polite">
-                  {currentUser.name || currentUser.given_name || 'User'}
-                </span>
-                {showSignOut && (
-                  <button
-                    type="button"
-                    className="signout-btn"
-                    onClick={handleSignOut}
-                    aria-label="Sign out"
-                  >
-                    Sign out
-                  </button>
-                )}
-              </>
+              <span className="user-greeting" aria-live="polite">
+                {currentUser.name || currentUser.given_name || 'User'}
+              </span>
             )}
           </div>
         </div>

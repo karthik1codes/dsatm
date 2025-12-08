@@ -53,6 +53,7 @@ export default defineConfig({
   server: {
     port: 8000,
     host: '0.0.0.0', // Listen on all network interfaces (IPv4 and IPv6)
+    strictPort: true,
     open: true,
     // Configure middleware to handle redirect and CSP headers
     configureServer(server) {

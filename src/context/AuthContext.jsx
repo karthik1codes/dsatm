@@ -159,7 +159,7 @@ export const AuthProvider = ({ children }) => {
     
     // Navigate to signin with replace: true to prevent back navigation
     if (navigate && typeof navigate === 'function') {
-      navigate("/signin", { replace: true })
+      navigate("/login", { replace: true })
     }
   }, [])
 

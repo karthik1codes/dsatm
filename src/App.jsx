@@ -5,7 +5,9 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import PublicRoute from './components/PublicRoute'
 import Login from './pages/Login'
+import Signup from './pages/Signup'
 import Home from './pages/Home'
+import FunActivities from './pages/FunActivities'
 import BrightWords from './pages/BrightWords'
 import SuperPower from './pages/SuperPower'
 import Feedback from './pages/Feedback'
@@ -32,25 +34,32 @@ function CatchAllRoute() {
     )
   }
   
-  // Redirect authenticated users to home (/home), others to signin
-  return <Navigate to={(isAuthenticated || hasValidSession) ? "/home" : "/signin"} replace />
+  // Redirect authenticated users to home (/home), others to login
+  return <Navigate to={(isAuthenticated || hasValidSession) ? "/home" : "/login"} replace />
 }
 
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes - signin (only accessible when not authenticated) */}
+      {/* Public routes - login & signup (only accessible when not authenticated) */}
       <Route 
-        path="/signin" 
+        path="/login" 
         element={
           <PublicRoute>
             <Login />
           </PublicRoute>
         } 
       />
+      <Route 
+        path="/signup" 
+        element={
+          <PublicRoute>
+            <Signup />
+          </PublicRoute>
+        } 
+      />
       
       {/* Protected routes - require authentication */}
-      {/* Home route - always accessible at /home */}
       <Route 
         path="/home" 
         element={
@@ -66,12 +75,15 @@ function AppRoutes() {
         element={<Navigate to="/home" replace />}
       />
       
-      {/* Redirect /login to /signin for backward compatibility */}
       <Route 
-        path="/login" 
-        element={<Navigate to="/signin" replace />}
+        path="/signlanguage" 
+        element={
+          <ProtectedRoute>
+            <SignLanguage />
+          </ProtectedRoute>
+        } 
       />
-      
+      {/* backward compatible hyphenated path */}
       <Route 
         path="/sign-language" 
         element={
@@ -88,8 +100,15 @@ function AppRoutes() {
           </ProtectedRoute>
         } 
       />
+      <Route 
+        path="/funactivities" 
+        element={
+          <ProtectedRoute>
+            <FunActivities />
+          </ProtectedRoute>
+        } 
+      />
       
-      {/* Legacy route - redirect to new Home (protected) */}
       <Route 
         path="/brightwords" 
         element={
@@ -98,9 +117,16 @@ function AppRoutes() {
           </ProtectedRoute>
         } 
       />
+      <Route 
+        path="/superpower" 
+        element={
+          <ProtectedRoute>
+            <SuperPower />
+          </ProtectedRoute>
+        } 
+      />
       
       {/* Public routes - accessible without authentication */}
-      <Route path="/superpower" element={<SuperPower />} />
       <Route path="/feedback" element={<Feedback />} />
       
       {/* Catch-all route - check auth and redirect appropriately */}
