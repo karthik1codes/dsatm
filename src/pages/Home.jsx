@@ -5,11 +5,13 @@ import SkipLink from '../components/SkipLink'
 import { useAccessibility } from '../context/AccessibilityContext'
 import { useAuth } from '../context/AuthContext'
 import { useAnnouncement } from '../hooks/useAnnouncement'
+import { speak } from '../utils/voice'
+import { playClick, playSuccess, playToggle, playModalOpen, playModalClose, setSoundEnabled, isSoundEnabled } from '../utils/sound'
 import '../styles/Home.css'
 
 const Home = () => {
   const navigate = useNavigate()
-  const { accessibilityMode } = useAccessibility()
+  const { accessibilityMode, voiceEnabled, toggleVoice } = useAccessibility()
   const { currentUser, signOut } = useAuth()
   const announce = useAnnouncement()
   const [selectedCategory, setSelectedCategory] = useState(null)
@@ -22,13 +24,22 @@ const Home = () => {
   })
   const [showSettings, setShowSettings] = useState(false)
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0)
+  const galleryRef = useRef(null)
   const [showDemoModal, setShowDemoModal] = useState(false)
   const [showParentsModal, setShowParentsModal] = useState(false)
   const [settingsState, setSettingsState] = useState({
     tts: true,
     hints: true,
-    sound: true,
+    sound: isSoundEnabled(),
   })
+
+  // Sync sound state with localStorage on mount
+  useEffect(() => {
+    setSettingsState(prev => ({
+      ...prev,
+      sound: isSoundEnabled()
+    }))
+  }, [])
 
   const supportProfiles = {
     general: {
@@ -54,13 +65,13 @@ const Home = () => {
       badge: 'Dyslexia Boost',
       image: '/assets/dyslexia.svg',
       alt: 'Animated dyslexia-friendly book',
-      caption: 'Color overlays keep letters steady and highlight syllables for confident reading.',
+      caption: 'Color overlays keep letters steady and highlight syllables—making reading smoother, clearer, and more confident.',
     },
     {
       badge: 'Deaf & HoH',
       image: '/assets/hearing.svg',
       alt: 'Animated ear with visual sound waves',
-      caption: 'Animated visual cues pulse whenever ChatGPT replies so silent learners never miss guidance.',
+      caption: 'Animated visuals and gesture prompts help silent learners absorb concepts effortlessly without sound reliance.',
     },
     {
       badge: 'Blind Explorer',
@@ -72,13 +83,13 @@ const Home = () => {
       badge: 'Dysgraphia Play',
       image: '/assets/dysgraphia.svg',
       alt: 'Animated pencil tracing letters',
-      caption: 'Guided tracing paths animate slowly to coach handwriting, spacing, and motor planning.',
+      caption: 'Guided tracing paths gently teach handwriting flow, spacing, and motor control through playful interactive cues.',
     },
     {
       badge: 'Neurodiverse Calm',
       image: '/assets/neurodiverse.svg',
       alt: 'Animated puzzle pieces for neurodiverse focus',
-      caption: 'Soothing puzzle pulses model routines, breathing, and predictable patterns to reduce overwhelm.',
+      caption: 'Soothing patterns and rhythmic motion help reduce sensory overload and keep learning stress-free.',
     },
   ]
 
@@ -104,6 +115,11 @@ const Home = () => {
     fetchStats()
   }, [currentUser])
 
+  // Page load announcement
+  useEffect(() => {
+    speak('Welcome to the Home page.')
+  }, [])
+
   // Carousel auto-play
   useEffect(() => {
     const interval = setInterval(() => {
@@ -113,14 +129,21 @@ const Home = () => {
   }, [])
 
   const handleSupportCategory = (category) => {
+    playClick()
     setSelectedCategory(category)
     const profile = supportProfiles[category]
+    const categoryName = category === 'general' ? 'General Learner' : 
+                         category === 'blind' ? 'Blind / Low Vision' :
+                         category === 'deaf' ? 'Deaf / Hard of Hearing' : 'Games'
+    speak(`Selecting ${categoryName} support profile. ${profile?.announcement || ''}`)
     if (profile) {
       announce(profile.announcement)
     }
   }
 
   const handleStartLearning = () => {
+    playClick()
+    speak('Clicking Start Learning. Loading your activities.')
     const supportSection = document.getElementById('support')
     if (supportSection) {
       supportSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -128,12 +151,19 @@ const Home = () => {
   }
 
   const handleStartPhonics = () => {
+    playClick()
+    speak('Clicking Phonics Fun. Opening Phonics Fun activity.')
     announce('Opening Phonics Fun activity')
     navigate('/funactivities')
   }
 
   const handleWatchDemo = () => {
+    playClick()
+    playModalOpen()
+    speak('Clicking Watch Demo. Navigating to demo video.')
     setShowDemoModal(true)
+    // Announce modal opening after state update
+    setTimeout(() => speak('Demo modal opened.'), 100)
   }
 
   return (
@@ -161,8 +191,20 @@ const Home = () => {
       <div className="main-container">
         <Navigation
           onStartLearning={handleStartLearning}
-          onOpenSettings={() => setShowSettings(true)}
-          onOpenParents={() => setShowParentsModal(true)}
+          onOpenSettings={() => {
+            playClick()
+            playModalOpen()
+            speak('Opening settings.')
+            setShowSettings(true)
+            setTimeout(() => speak('Settings opened.'), 100)
+          }}
+          onOpenParents={() => {
+            playClick()
+            playModalOpen()
+            speak('Opening parents community.')
+            setShowParentsModal(true)
+            setTimeout(() => speak('Parents community modal opened.'), 100)
+          }}
         />
 
         <main id="mainContent" role="main" tabIndex={-1}>
@@ -184,6 +226,7 @@ const Home = () => {
                 <button
                   className="btn-primary"
                   onClick={handleStartLearning}
+                  onFocus={() => speak('Start Learning button')}
                   aria-label="Start learning journey"
                 >
                   🚀 Start Learning
@@ -191,6 +234,7 @@ const Home = () => {
                 <button
                   className="btn-secondary"
                   onClick={handleWatchDemo}
+                  onFocus={() => speak('Watch Demo button')}
                   aria-label="Watch demo video"
                 >
                   ▶️ Watch Demo
@@ -205,7 +249,13 @@ const Home = () => {
                 aria-label="Accessibility spotlights"
                 aria-live="polite"
               >
-                <div className="motion-gallery">
+                <div 
+                  ref={galleryRef}
+                  className="motion-gallery"
+                  style={{
+                    transform: `translateX(-${currentCarouselIndex * 100}%)`
+                  }}
+                >
                   {carouselItems.map((item, index) => (
                     <figure
                       key={index}
@@ -213,7 +263,9 @@ const Home = () => {
                       aria-hidden={index !== currentCarouselIndex}
                     >
                       <div className="motion-badge">{item.badge}</div>
-                      <img src={item.image} alt={item.alt} className="motion-image" />
+                      <div className="motion-image-wrapper">
+                        <img src={item.image} alt={item.alt} className="motion-image" />
+                      </div>
                       <figcaption>
                         <h4>{item.caption}</h4>
                       </figcaption>
@@ -228,7 +280,9 @@ const Home = () => {
                       aria-selected={index === currentCarouselIndex}
                       aria-label={`View ${carouselItems[index].badge}`}
                       className={`motion-dot ${index === currentCarouselIndex ? 'active' : ''}`}
-                      onClick={() => setCurrentCarouselIndex(index)}
+                      onClick={() => {
+                        setCurrentCarouselIndex(index)
+                      }}
                     />
                   ))}
                 </div>
@@ -250,32 +304,37 @@ const Home = () => {
             </div>
 
             <div className="support-grid" role="group" aria-label="Support profile options">
-              {Object.entries(supportProfiles).map(([key, profile]) => (
-                <button
-                  key={key}
-                  className={`support-card ${selectedCategory === key ? 'active' : ''}`}
-                  data-category={key}
-                  onClick={() => handleSupportCategory(key)}
-                  aria-pressed={selectedCategory === key}
-                  aria-label={`Select ${key} support profile`}
-                >
-                  <div className="support-icon">
-                    {key === 'general' && '🌈'}
-                    {key === 'blind' && '🦮'}
-                    {key === 'deaf' && '🪄'}
-                    {key === 'neurodiverse' && '🧩'}
-                  </div>
-                  <div className="support-info">
-                    <h3>
-                      {key === 'general' && 'General Learner'}
-                      {key === 'blind' && 'Blind / Low Vision'}
-                      {key === 'deaf' && 'Deaf / Hard of Hearing'}
-                      {key === 'neurodiverse' && 'Games'}
-                    </h3>
-                    <p>{profile.message}</p>
-                  </div>
-                </button>
-              ))}
+              {Object.entries(supportProfiles).map(([key, profile]) => {
+                const categoryName = key === 'general' ? 'General Learner' : 
+                                   key === 'blind' ? 'Blind / Low Vision' :
+                                   key === 'deaf' ? 'Deaf / Hard of Hearing' : 'Games'
+                return (
+                  <button
+                    key={key}
+                    className={`support-card ${selectedCategory === key ? 'active' : ''}`}
+                    data-category={key}
+                    onClick={() => handleSupportCategory(key)}
+                    aria-pressed={selectedCategory === key}
+                    aria-label={`Select ${key} support profile`}
+                  >
+                    <div className="support-icon">
+                      {key === 'general' && '🌈'}
+                      {key === 'blind' && '🦮'}
+                      {key === 'deaf' && '🪄'}
+                      {key === 'neurodiverse' && '🧩'}
+                    </div>
+                    <div className="support-info">
+                      <h3>
+                        {key === 'general' && 'General Learner'}
+                        {key === 'blind' && 'Blind / Low Vision'}
+                        {key === 'deaf' && 'Deaf / Hard of Hearing'}
+                        {key === 'neurodiverse' && 'Games'}
+                      </h3>
+                      <p>{profile.message}</p>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
 
             <div className="support-message" id="categoryMessage" aria-live="polite">
@@ -308,20 +367,31 @@ const Home = () => {
                     <button
                       className="btn-primary"
                       onClick={handleStartPhonics}
+                      onFocus={() => speak('Phonics Fun button')}
                       aria-label="Start Phonics Fun activity"
                     >
                       🔤 Phonics Fun
                     </button>
                     <button
                       className="btn-secondary"
-                      onClick={() => navigate('/funactivities#spelling')}
+                    onClick={() => {
+                      playClick()
+                      speak('Clicking Spelling Wizard. Navigating to Spelling Wizard activity.')
+                      navigate('/funactivities#spelling')
+                    }}
+                      onFocus={() => speak('Spelling Wizard button')}
                       aria-label="Start Spelling Wizard"
                     >
                       ✏️ Spelling Wizard
                     </button>
                     <button
                       className="btn-secondary"
-                      onClick={() => navigate('/funactivities')}
+                    onClick={() => {
+                      playClick()
+                      speak('Clicking Explore all fun activities. Navigating to activities page.')
+                      navigate('/funactivities')
+                    }}
+                      onFocus={() => speak('Explore all fun activities button')}
                       aria-label="Explore all fun activities"
                     >
                       Explore all fun activities
@@ -341,21 +411,36 @@ const Home = () => {
                   <div style={{ display: 'grid', gap: '12px' }}>
                     <button
                       className="btn-primary"
-                      onClick={() => navigate('/funactivities#memory')}
+                    onClick={() => {
+                      playClick()
+                      speak('Clicking Memory Master. Navigating to Memory Master activity.')
+                      navigate('/funactivities#memory')
+                    }}
+                      onFocus={() => speak('Memory Master button')}
                       aria-label="Start Memory Master"
                     >
                       🧠 Memory Master
                     </button>
                     <button
                       className="btn-secondary"
-                      onClick={() => navigate('/funactivities#stories')}
+                    onClick={() => {
+                      playClick()
+                      speak('Clicking Story Creator. Navigating to Story Creator activity.')
+                      navigate('/funactivities#stories')
+                    }}
+                      onFocus={() => speak('Story Creator button')}
                       aria-label="Start Story Creator"
                     >
                       🚀 Story Creator
                     </button>
                     <button
                       className="btn-secondary"
-                      onClick={() => navigate('/funactivities')}
+                    onClick={() => {
+                      playClick()
+                      speak('Clicking Explore all fun activities. Navigating to activities page.')
+                      navigate('/funactivities')
+                    }}
+                      onFocus={() => speak('Explore all fun activities button')}
                       aria-label="Explore all fun activities"
                     >
                       Explore all fun activities
@@ -375,21 +460,36 @@ const Home = () => {
                   <div style={{ display: 'grid', gap: '12px' }}>
                     <button
                       className="btn-primary"
-                      onClick={() => navigate('/funactivities#writing')}
+                    onClick={() => {
+                      playClick()
+                      speak('Clicking Writing Artist. Navigating to Writing Artist activity.')
+                      navigate('/funactivities#writing')
+                    }}
+                      onFocus={() => speak('Writing Artist button')}
                       aria-label="Start Writing Artist"
                     >
                       🎨 Writing Artist
                     </button>
                     <button
                       className="btn-secondary"
-                      onClick={() => navigate('/funactivities#reading')}
+                    onClick={() => {
+                      playClick()
+                      speak('Clicking Story Explorer. Navigating to Story Explorer activity.')
+                      navigate('/funactivities#reading')
+                    }}
+                      onFocus={() => speak('Story Explorer button')}
                       aria-label="Start Story Explorer"
                     >
                       📖 Story Explorer
                     </button>
                     <button
                       className="btn-secondary"
-                      onClick={() => navigate('/funactivities')}
+                    onClick={() => {
+                      playClick()
+                      speak('Clicking Explore all fun activities. Navigating to activities page.')
+                      navigate('/funactivities')
+                    }}
+                      onFocus={() => speak('Explore all fun activities button')}
                       aria-label="Explore all fun activities"
                     >
                       Explore all fun activities
@@ -408,7 +508,12 @@ const Home = () => {
                   </p>
                   <button
                     className="btn-secondary"
-                    onClick={() => navigate('/funactivities')}
+                    onClick={() => {
+                      playClick()
+                      speak('Clicking Explore Fun Activities. Navigating to activities page.')
+                      navigate('/funactivities')
+                    }}
+                    onFocus={() => speak('Explore Fun Activities button')}
                     aria-label="Go to Fun Activities"
                   >
                     Explore Fun Activities
@@ -486,7 +591,11 @@ const Home = () => {
           aria-modal="true"
           aria-labelledby="demoModalTitle"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowDemoModal(false)
+            if (e.target === e.currentTarget) {
+              playModalClose()
+              speak('Demo modal closed.')
+              setShowDemoModal(false)
+            }
           }}
         >
           <div className="demo-modal">
@@ -496,19 +605,27 @@ const Home = () => {
               <button
                 className="btn-primary"
                 onClick={() => {
+                  playClick()
+                  playSuccess()
+                  speak('Clicking Watch Video. Opening YouTube video in a new tab.')
                   window.open('https://www.youtube.com/watch?v=dm7uXtpNiAQ&t=4s', '_blank', 'noopener,noreferrer')
                   setShowDemoModal(false)
                   announce('Opening YouTube video in a new tab')
                 }}
+                onFocus={() => speak('Watch Video button')}
               >
                 ▶️ Watch Video
               </button>
               <button
                 className="btn-secondary"
                 onClick={() => {
+                  playClick()
+                  playModalClose()
+                  speak('Clicking Cancel. Closing demo modal.')
                   setShowDemoModal(false)
                   announce('Video canceled')
                 }}
+                onFocus={() => speak('Cancel button')}
               >
                 Cancel
               </button>
@@ -525,7 +642,11 @@ const Home = () => {
           aria-modal="true"
           aria-labelledby="parentsModalTitle"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowParentsModal(false)
+            if (e.target === e.currentTarget) {
+              playModalClose()
+              speak('Parents community modal closed.')
+              setShowParentsModal(false)
+            }
           }}
         >
           <div className="demo-modal">
@@ -535,10 +656,14 @@ const Home = () => {
               <button
                 className="btn-primary"
                 onClick={() => {
+                  playClick()
+                  playSuccess()
+                  speak('Clicking WhatsApp Community. Opening WhatsApp community.')
                   window.open('https://chat.whatsapp.com/BSkBimGGf4mLmXS7nmO6v5', '_blank', 'noopener,noreferrer')
                   setShowParentsModal(false)
                   announce('Opening WhatsApp community')
                 }}
+                onFocus={() => speak('WhatsApp Community button')}
               >
                 <svg className="community-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                   <path
@@ -551,10 +676,14 @@ const Home = () => {
               <button
                 className="btn-secondary"
                 onClick={() => {
+                  playClick()
+                  playSuccess()
+                  speak('Clicking Facebook Community. Opening Facebook community.')
                   window.open('https://www.facebook.com/share/g/17Y2s832XB/', '_blank', 'noopener,noreferrer')
                   setShowParentsModal(false)
                   announce('Opening Facebook community')
                 }}
+                onFocus={() => speak('Facebook Community button')}
               >
                 <svg className="community-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                   <path
@@ -569,9 +698,13 @@ const Home = () => {
               <button
                 className="btn-secondary"
                 onClick={() => {
+                  playClick()
+                  playModalClose()
+                  speak('Clicking Cancel. Closing parents community modal.')
                   setShowParentsModal(false)
                   announce('Community selection canceled')
                 }}
+                onFocus={() => speak('Cancel button')}
               >
                 Cancel
               </button>
@@ -588,7 +721,11 @@ const Home = () => {
           aria-modal="true"
           aria-labelledby="settingsTitle"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowSettings(false)
+            if (e.target === e.currentTarget) {
+              playModalClose()
+              speak('Settings closed.')
+              setShowSettings(false)
+            }
           }}
         >
           <div
@@ -602,7 +739,13 @@ const Home = () => {
               </h3>
               <button
                 aria-label="Close settings"
-                onClick={() => setShowSettings(false)}
+                onClick={() => {
+                  playClick()
+                  playModalClose()
+                  speak('Closing settings.')
+                  setShowSettings(false)
+                }}
+                onFocus={() => speak('Close settings button')}
                 style={{
                   width: 42,
                   height: 42,
@@ -656,6 +799,7 @@ const Home = () => {
             </div>
 
             {[
+              { key: 'voice', label: 'Voice Assistance', emoji: '🗣️', isVoice: true },
               { key: 'tts', label: 'Text-to-Speech', emoji: '🔊' },
               { key: 'hints', label: 'Visual Hints', emoji: '💡' },
               { key: 'sound', label: 'Sound Effects', emoji: '🎵' },
@@ -676,13 +820,33 @@ const Home = () => {
                 <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                   <input
                     type="checkbox"
-                    checked={settingsState[item.key]}
-                    onChange={() =>
-                      setSettingsState((prev) => ({
-                        ...prev,
-                        [item.key]: !prev[item.key],
-                      }))
-                    }
+                    checked={item.isVoice ? voiceEnabled : settingsState[item.key]}
+                    onChange={() => {
+                      playToggle()
+                      if (item.isVoice) {
+                        toggleVoice()
+                      } else {
+                        const newValue = !settingsState[item.key]
+                        speak(`${item.label} ${newValue ? 'enabled' : 'disabled'}.`)
+                        setSettingsState((prev) => ({
+                          ...prev,
+                          [item.key]: newValue,
+                        }))
+                        // Update sound system if sound toggle is changed
+                        if (item.key === 'sound') {
+                          setSoundEnabled(newValue)
+                          if (newValue && isSoundEnabled()) {
+                            // Only announce if voice is enabled
+                            if (voiceEnabled) {
+                              speak('Sound effects enabled.')
+                            }
+                          } else if (voiceEnabled) {
+                            speak('Sound effects disabled.')
+                          }
+                        }
+                      }
+                    }}
+                    onFocus={() => speak(`${item.label} toggle`)}
                     style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }}
                   />
                   <span
@@ -690,7 +854,7 @@ const Home = () => {
                     style={{
                       width: 46,
                       height: 26,
-                      background: settingsState[item.key] ? '#8B5CF6' : '#e5e7eb',
+                      background: (item.isVoice ? voiceEnabled : settingsState[item.key]) ? '#8B5CF6' : '#e5e7eb',
                       borderRadius: 999,
                       position: 'relative',
                       transition: 'all 0.2s ease',
@@ -700,7 +864,7 @@ const Home = () => {
                       style={{
                         position: 'absolute',
                         top: 3,
-                        left: settingsState[item.key] ? 22 : 4,
+                        left: (item.isVoice ? voiceEnabled : settingsState[item.key]) ? 22 : 4,
                         width: 20,
                         height: 20,
                         background: '#fff',
@@ -719,9 +883,12 @@ const Home = () => {
                 className="btn-secondary"
                 style={{ width: '100%', textAlign: 'center' }}
                 onClick={() => {
+                  playClick()
+                  speak('Clicking Sign out. Signing out of your account.')
                   signOut(() => setShowSettings(false))
                   setShowSettings(false)
                 }}
+                onFocus={() => speak('Sign out button')}
               >
                 Sign out
               </button>

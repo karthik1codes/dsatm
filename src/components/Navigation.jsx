@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAccessibility } from '../context/AccessibilityContext'
 import { useAuth } from '../context/AuthContext'
 import { useAnnouncement } from '../hooks/useAnnouncement'
+import { speak } from '../utils/voice'
+import { playClick, playToggle } from '../utils/sound'
 import '../styles/Navigation.css'
 
 const Navigation = ({ onStartLearning, onOpenSettings, onOpenParents }) => {
@@ -14,11 +16,16 @@ const Navigation = ({ onStartLearning, onOpenSettings, onOpenParents }) => {
   const [showSignOut, setShowSignOut] = useState(false)
 
   const handleAccessibilityToggle = () => {
+    playClick()
+    playToggle()
+    speak(`Clicking Accessibility Mode. ${!accessibilityMode ? 'Enabling' : 'Disabling'} accessibility mode.`)
     toggleAccessibilityMode()
     announce(`Accessibility mode ${!accessibilityMode ? 'enabled' : 'disabled'}`)
   }
 
   const handleSignOut = () => {
+    playClick()
+    speak('Clicking Sign out. Signing out of your account.')
     signOut(navigate)
     announce('Signed out successfully')
   }
@@ -33,7 +40,16 @@ const Navigation = ({ onStartLearning, onOpenSettings, onOpenParents }) => {
   return (
     <header className="site-header" role="banner">
       <nav className="nav-header" role="navigation" aria-label="Primary navigation">
-        <Link to="/home" className="logo" aria-label="BrightWords home">
+        <Link 
+          to="/home" 
+          className="logo" 
+          aria-label="BrightWords home"
+          onClick={() => {
+            playClick()
+            speak('Clicking BrightWords logo. Navigating to home page.')
+          }}
+          onFocus={() => speak('BrightWords logo')}
+        >
           <div className="logo-icon" aria-hidden="true">✨</div>
           <span>BrightWords</span>
         </Link>
@@ -44,6 +60,11 @@ const Navigation = ({ onStartLearning, onOpenSettings, onOpenParents }) => {
             className="nav-item"
             role="menuitem"
             title="Interactive practice modules"
+            onClick={() => {
+              playClick()
+              speak('Clicking Learn. Navigating to Learn page.')
+            }}
+            onFocus={() => speak('Learn navigation link')}
           >
             Learn
           </Link>
@@ -52,6 +73,8 @@ const Navigation = ({ onStartLearning, onOpenSettings, onOpenParents }) => {
             className="nav-item"
             role="menuitem"
             onClick={(e) => {
+              playClick()
+              speak('Clicking Progress. Navigating to Progress section.')
               // Smooth scroll when already on home
               if (location.pathname === '/home') {
                 e.preventDefault()
@@ -61,6 +84,7 @@ const Navigation = ({ onStartLearning, onOpenSettings, onOpenParents }) => {
                 }
               }
             }}
+            onFocus={() => speak('Progress navigation link')}
           >
             Progress
           </Link>
@@ -69,6 +93,11 @@ const Navigation = ({ onStartLearning, onOpenSettings, onOpenParents }) => {
             className="nav-item"
             role="menuitem"
             title="Sign Language Learning"
+            onClick={() => {
+              playClick()
+              speak('Clicking Sign Language. Navigating to Sign Language page.')
+            }}
+            onFocus={() => speak('Sign Language navigation link')}
           >
             Sign Language
           </Link>
@@ -78,12 +107,24 @@ const Navigation = ({ onStartLearning, onOpenSettings, onOpenParents }) => {
             role="menuitem"
             onClick={(e) => {
               e.preventDefault()
+              playClick()
+              speak('Clicking Communities. Opening parents community.')
               if (onOpenParents) onOpenParents()
             }}
+            onFocus={() => speak('Communities navigation link')}
           >
             Communities
           </a>
-          <Link to="/feedback" className="nav-item" role="menuitem">
+          <Link 
+            to="/feedback" 
+            className="nav-item" 
+            role="menuitem"
+            onClick={() => {
+              playClick()
+              speak('Clicking Feedback. Navigating to Feedback page.')
+            }}
+            onFocus={() => speak('Feedback navigation link')}
+          >
             Feedback
           </Link>
           <Link
@@ -91,6 +132,11 @@ const Navigation = ({ onStartLearning, onOpenSettings, onOpenParents }) => {
             className="nav-item superpower-link-bypass"
             role="menuitem"
             title="SuperPower - AWS AugmentAbility features"
+            onClick={() => {
+              playClick()
+              speak('Clicking SuperPower. Navigating to SuperPower page.')
+            }}
+            onFocus={() => speak('SuperPower navigation link')}
           >
             SuperPower
           </Link>
@@ -108,6 +154,7 @@ const Navigation = ({ onStartLearning, onOpenSettings, onOpenParents }) => {
               aria-label={accessibilityMode ? 'Turn accessibility mode off' : 'Turn accessibility mode on'}
               onClick={handleAccessibilityToggle}
               onKeyDown={(e) => handleKeyDown(e, handleAccessibilityToggle)}
+              onFocus={() => speak('Accessibility Mode toggle button')}
             >
               {accessibilityMode ? 'Accessibility Mode On' : '♿ Accessibility Mode'}
             </button>
@@ -117,8 +164,19 @@ const Navigation = ({ onStartLearning, onOpenSettings, onOpenParents }) => {
             role="button"
             tabIndex={0}
             aria-label="Open settings"
-            onClick={onOpenSettings}
-            onKeyDown={(e) => handleKeyDown(e, onOpenSettings)}
+            onClick={() => {
+              playClick()
+              speak('Clicking user avatar. Opening settings.')
+              if (onOpenSettings) onOpenSettings()
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                speak('Clicking user avatar. Opening settings.')
+                if (onOpenSettings) onOpenSettings()
+              }
+            }}
+            onFocus={() => speak('User settings button')}
           >
             👤
           </div>

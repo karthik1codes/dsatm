@@ -106,7 +106,7 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       input: {
-        main: './index-react.html'
+        main: './index.html'
       }
     },
     // Copy static assets to dist

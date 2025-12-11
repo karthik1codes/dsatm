@@ -1,48 +1,92 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
   <defs>
-    <linearGradient id="bookGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+    <!-- Soft pastel gradients -->
+    <linearGradient id="bookGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F977B7;stop-opacity:1" />
     </linearGradient>
-    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#10B981;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    <linearGradient id="pageGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FEF3C7;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#FDE68A;stop-opacity:0.95" />
     </linearGradient>
+    <radialGradient id="glowGrad" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#9B5CF6;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#9B5CF6;stop-opacity:0" />
+    </radialGradient>
+    <radialGradient id="bgBlob1" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#F9C449;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#F9C449;stop-opacity:0" />
+    </radialGradient>
+    <radialGradient id="bgBlob2" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#6CC8FF;stop-opacity:0.25" />
+      <stop offset="100%" style="stop-color:#6CC8FF;stop-opacity:0" />
+    </radialGradient>
+    <filter id="softShadow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+      <feOffset dx="0" dy="4" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="12" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
   
-  <!-- Book -->
-  <rect x="100" y="80" width="200" height="160" rx="8" fill="url(#bookGradient)" opacity="0.9"/>
-  <rect x="100" y="80" width="200" height="160" rx="8" fill="none" stroke="#fff" stroke-width="3"/>
+  <!-- Background soft blobs -->
+  <ellipse cx="80" cy="80" rx="60" ry="50" fill="url(#bgBlob1)" opacity="0.6"/>
+  <ellipse cx="320" cy="220" rx="70" ry="55" fill="url(#bgBlob2)" opacity="0.5"/>
   
-  <!-- Book pages -->
-  <line x1="200" y1="80" x2="200" y2="240" stroke="#fff" stroke-width="2" opacity="0.6"/>
+  <!-- Main book with soft shadow -->
+  <g filter="url(#softShadow)">
+    <!-- Book cover with gradient -->
+    <rect x="110" y="70" width="180" height="160" rx="16" fill="url(#bookGrad)" opacity="0.95"/>
+    <rect x="110" y="70" width="180" height="160" rx="16" fill="none" stroke="rgba(155, 92, 246, 0.3)" stroke-width="2"/>
+    
+    <!-- Inner glow effect -->
+    <rect x="115" y="75" width="170" height="150" rx="12" fill="url(#glowGrad)" opacity="0.6"/>
+    
+    <!-- Book pages (cream gradient) -->
+    <rect x="200" y="80" width="85" height="140" rx="8" fill="url(#pageGrad)"/>
+    <rect x="200" y="80" width="85" height="140" rx="8" fill="none" stroke="rgba(155, 92, 246, 0.15)" stroke-width="1.5"/>
+    
+    <!-- Book spine -->
+    <line x1="200" y1="80" x2="200" y2="220" stroke="rgba(155, 92, 246, 0.4)" stroke-width="2"/>
+  </g>
   
-  <!-- Color overlay effect -->
-  <rect x="110" y="100" width="80" height="20" rx="4" fill="#FEF3C7" opacity="0.7"/>
-  <rect x="110" y="130" width="80" height="20" rx="4" fill="#DBEAFE" opacity="0.7"/>
-  <rect x="110" y="160" width="80" height="20" rx="4" fill="#FCE7F3" opacity="0.7"/>
+  <!-- Color overlay highlights (soft pastels) -->
+  <rect x="120" y="95" width="70" height="18" rx="6" fill="#FEF3C7" opacity="0.85"/>
+  <rect x="120" y="120" width="70" height="18" rx="6" fill="#DBEAFE" opacity="0.85"/>
+  <rect x="120" y="145" width="70" height="18" rx="6" fill="#FCE7F3" opacity="0.85"/>
+  <rect x="120" y="170" width="70" height="18" rx="6" fill="#D1FAE5" opacity="0.85"/>
   
-  <!-- Text lines with color coding -->
-  <rect x="210" y="105" width="80" height="8" rx="2" fill="url(#textGradient)" opacity="0.8"/>
-  <rect x="210" y="120" width="70" height="8" rx="2" fill="url(#textGradient)" opacity="0.8"/>
-  <rect x="210" y="135" width="85" height="8" rx="2" fill="url(#textGradient)" opacity="0.8"/>
-  <rect x="210" y="150" width="75" height="8" rx="2" fill="url(#textGradient)" opacity="0.8"/>
+  <!-- Text lines with gradient -->
+  <rect x="210" y="100" width="75" height="6" rx="3" fill="#9B5CF6" opacity="0.7"/>
+  <rect x="210" y="115" width="65" height="6" rx="3" fill="#F977B7" opacity="0.7"/>
+  <rect x="210" y="130" width="80" height="6" rx="3" fill="#6CC8FF" opacity="0.7"/>
+  <rect x="210" y="145" width="70" height="6" rx="3" fill="#F9C449" opacity="0.7"/>
   
-  <!-- Syllable highlights -->
-  <circle cx="140" cy="110" r="15" fill="#FEF3C7" opacity="0.5">
-    <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2s" repeatCount="indefinite"/>
+  <!-- Syllable highlight circles with glow -->
+  <circle cx="155" cy="104" r="12" fill="#F9C449" opacity="0.6" filter="url(#glow)">
+    <animate attributeName="opacity" values="0.6;0.9;0.6" dur="2.5s" repeatCount="indefinite"/>
   </circle>
-  <circle cx="170" cy="130" r="15" fill="#DBEAFE" opacity="0.5">
-    <animate attributeName="opacity" values="0.5;0.8;0.5" dur="2s" begin="0.5s" repeatCount="indefinite"/>
+  <circle cx="185" cy="129" r="12" fill="#6CC8FF" opacity="0.6" filter="url(#glow)">
+    <animate attributeName="opacity" values="0.6;0.9;0.6" dur="2.5s" begin="0.5s" repeatCount="indefinite"/>
   </circle>
   
-  <!-- Decorative elements -->
-  <circle cx="80" cy="120" r="20" fill="#F59E0B" opacity="0.3">
-    <animate attributeName="r" values="20;25;20" dur="3s" repeatCount="indefinite"/>
+  <!-- Decorative orbs -->
+  <circle cx="70" cy="130" r="18" fill="#F9C449" opacity="0.4" filter="url(#glow)">
+    <animate attributeName="r" values="18;22;18" dur="4s" repeatCount="indefinite"/>
   </circle>
-  <circle cx="320" cy="200" r="25" fill="#EC4899" opacity="0.3">
-    <animate attributeName="r" values="25;30;25" dur="3s" begin="1s" repeatCount="indefinite"/>
+  <circle cx="330" cy="180" r="20" fill="#F977B7" opacity="0.4" filter="url(#glow)">
+    <animate attributeName="r" values="20;24;20" dur="4s" begin="1.5s" repeatCount="indefinite"/>
   </circle>
 </svg>
-

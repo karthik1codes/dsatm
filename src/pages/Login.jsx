@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { speak } from '../utils/voice'
+import { playClick, playSuccess } from '../utils/sound'
 import '../styles/Login.css'
 
 const Login = () => {
@@ -39,9 +41,14 @@ const Login = () => {
     return () => clearInterval(checkGoogleScript)
   }, [initializeGoogleAuth])
 
+  // Page load announcement
+  useEffect(() => {
+    speak('Welcome to the Login page.')
+  }, [])
+
   useEffect(() => {
     if (buttonContainerReady && window.google?.accounts?.id) {
-      const buttonContainer = document.getElementById('googleSignInButton')
+      const buttonContainer = document.getElementById('googleBtn')
       if (buttonContainer && !buttonContainer.hasChildNodes()) {
         window.google.accounts.id.initialize({
           client_id: '369705995460-d2f937r1bj3963upbmob113ngkf5v6og.apps.googleusercontent.com',
@@ -58,16 +65,21 @@ const Login = () => {
                 // Check if it's a cancellation
                 if (response.error) {
                   console.log('Sign-in cancelled or error:', response.error)
+                  speak('Sign in canceled.')
                   return
                 }
                 return
               }
 
+              playClick()
+              playSuccess()
+              speak('Signing in with Google.')
               // Use login function from AuthContext and pass navigate function
               // AuthContext will handle navigation after setting user state
               login(response, navigate)
             } catch (error) {
               console.error('Error during sign-in:', error)
+              speak('Error signing in. Please try again.')
               // Don't show error to user - let PublicRoute handle redirect
               // The error is logged for debugging
             }
@@ -78,11 +90,16 @@ const Login = () => {
         window.google.accounts.id.renderButton(buttonContainer, {
           theme: 'filled_blue',
           size: 'large',
+          width: '100%',
           shape: 'pill',
-          type: 'standard',
-          text: 'continue_with',
-          width: 260,
         })
+
+        // Add focus handler to Google button container
+        if (buttonContainer) {
+          buttonContainer.addEventListener('focus', () => {
+            speak('Sign in with Google button')
+          }, true)
+        }
 
         if (!currentUser) {
           window.google.accounts.id.prompt()
@@ -94,9 +111,16 @@ const Login = () => {
   if (isLoading) {
     return (
       <div className="login-page" role="main">
-        <div className="auth-overlay">
-          <div className="auth-card">
-            <div className="loading-spinner" aria-label="Loading"></div>
+        {/* Background Decorations */}
+        <div className="login-bg-decoration" aria-hidden="true">
+          <div className="login-cloud login-cloud1"></div>
+          <div className="login-cloud login-cloud2"></div>
+          <div className="login-shape login-shape-circle"></div>
+          <div className="login-shape login-shape-triangle"></div>
+        </div>
+        <div className="login-overlay">
+          <div className="login-card">
+            <div className="login-loading-spinner" aria-label="Loading"></div>
           </div>
         </div>
       </div>
@@ -105,13 +129,29 @@ const Login = () => {
 
   return (
     <div className="login-page" role="main">
-      <div className="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-        <div className="auth-card">
-          <div className="auth-logo" aria-hidden="true">✨</div>
-          <h1 id="authTitle">Welcome to BrightWords</h1>
-          <p>Sign in with Google to unlock your personalized learning journey.</p>
-          <div id="googleSignInButton" className="google-btn-placeholder" aria-live="polite"></div>
-          <p className="auth-hint">
+      {/* Background Decorations */}
+      <div className="login-bg-decoration" aria-hidden="true">
+        <div className="login-cloud login-cloud1"></div>
+        <div className="login-cloud login-cloud2"></div>
+        <div className="login-shape login-shape-circle"></div>
+        <div className="login-shape login-shape-triangle"></div>
+      </div>
+
+      <div className="login-overlay" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+        <div className="login-card">
+          <div className="login-logo" aria-hidden="true">
+            <span className="login-star">⭐</span>
+          </div>
+          <h1 id="loginTitle" className="login-title">
+            Welcome to <span className="login-brand">BrightWords</span>
+          </h1>
+          <p className="login-subtitle">
+            Sign in with Google to unlock your personalized learning journey.
+          </p>
+          <div className="google-btn-wrapper">
+            <div id="googleBtn" aria-live="polite" aria-label="Sign in with Google"></div>
+          </div>
+          <p className="login-hint">
             Need a different account? Use the account switcher in the Google dialog.
           </p>
         </div>

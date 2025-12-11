@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAnnouncement } from '../hooks/useAnnouncement'
+import { speak } from '../utils/voice'
+import { playClick, playSuccess } from '../utils/sound'
 import '../styles/Subscription.css'
 
 const RAZORPAY_KEY_ID = 'rzp_test_Rneu0aaeOPlIHD'
@@ -86,6 +88,11 @@ const Subscription = () => {
       ],
     },
   }
+
+  // Page load announcement
+  useEffect(() => {
+    speak('Welcome to the Subscription page.')
+  }, [])
 
   useEffect(() => {
     // Check if already subscribed
@@ -407,9 +414,12 @@ const Subscription = () => {
                   <button
                     className="subscribe-button"
                     onClick={() => {
+                      playClick()
+                      speak(`Clicking Subscribe to ${plan.name}. Initiating payment.`)
                       selectPlan(planKey)
                       initiatePayment(planKey)
                     }}
+                    onFocus={() => speak(`Subscribe to ${plan.name} button`)}
                     disabled={loading}
                     aria-label={`Subscribe to ${plan.name}`}
                   >
@@ -455,9 +465,12 @@ const Subscription = () => {
                   <button
                     className="subscribe-button"
                     onClick={() => {
+                      playClick()
+                      speak(`Clicking Subscribe to ${plan.name}. Initiating payment.`)
                       selectPlan(planKey)
                       initiatePayment(planKey)
                     }}
+                    onFocus={() => speak(`Subscribe to ${plan.name} button`)}
                     disabled={loading}
                     aria-label={`Subscribe to ${plan.name}`}
                   >
@@ -476,7 +489,15 @@ const Subscription = () => {
         </div>
 
         <div className="back-link">
-          <Link to="/home" aria-label="Back to home page">
+          <Link 
+            to="/home" 
+            aria-label="Back to home page"
+            onClick={() => {
+              playClick()
+              speak('Clicking Back to Home. Navigating to home page.')
+            }}
+            onFocus={() => speak('Back to Home link')}
+          >
             ← Back to Home
           </Link>
         </div>

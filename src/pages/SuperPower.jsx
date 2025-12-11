@@ -1,7 +1,13 @@
 import React, { useEffect, useRef } from 'react'
+import { speak } from '../utils/voice'
 
 function SuperPower() {
   const iframeRef = useRef(null)
+
+  // Page load announcement
+  useEffect(() => {
+    speak('Welcome to the SuperPower page.')
+  }, [])
 
   useEffect(() => {
     // Load the SuperPower login page in an iframe - it will redirect to landing after auth

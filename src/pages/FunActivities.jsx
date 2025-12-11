@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAnnouncement } from '../hooks/useAnnouncement'
+import { speak } from '../utils/voice'
+import { playClick, playSuccess } from '../utils/sound'
 import '../styles/FunActivities.css'
 
 const defaultActivities = [
@@ -85,6 +87,11 @@ const FunActivities = () => {
     }
   }, [])
 
+  // Page load announcement
+  useEffect(() => {
+    speak('Welcome to the Fun Activities page.')
+  }, [])
+
   // Select activity from hash (e.g., #memory or #stories)
   useEffect(() => {
     const hash = location.hash?.replace('#', '')
@@ -132,10 +139,28 @@ const FunActivities = () => {
             BrightWords app.
           </p>
           <div className="hero-actions">
-            <Link className="btn btn-primary" to="/home" aria-label="Back to home">
+            <Link 
+              className="btn btn-primary" 
+              to="/home" 
+              aria-label="Back to home"
+              onClick={() => {
+                playClick()
+                speak('Clicking Back to Home. Navigating to home page.')
+              }}
+              onFocus={() => speak('Back to Home button')}
+            >
               ← Back to Home
             </Link>
-            <Link className="btn btn-ghost" to="/signlanguage" aria-label="Go to sign language page">
+            <Link 
+              className="btn btn-ghost" 
+              to="/signlanguage" 
+              aria-label="Go to sign language page"
+              onClick={() => {
+                playClick()
+                speak('Clicking Sign Language. Navigating to Sign Language page.')
+              }}
+              onFocus={() => speak('Sign Language button')}
+            >
               🤟 Sign Language
             </Link>
           </div>
@@ -152,6 +177,8 @@ const FunActivities = () => {
                 key={activity.id}
                 className={`activity-tile ${isActive ? 'active' : ''}`}
                 onClick={() => {
+                  playClick()
+                  speak(`Clicking ${activity.title}. ${activity.description}`)
                   setActiveId(activity.id)
                   announce(`${activity.title} selected`)
                 }}
@@ -186,12 +213,27 @@ const FunActivities = () => {
             ))}
           </div>
           <div className="detail-actions">
-            <button className="btn btn-primary" onClick={() => handleComplete(activeActivity.id)}>
+            <button 
+              className="btn btn-primary" 
+              onClick={() => {
+                playClick()
+                playSuccess()
+                speak('Clicking Mark Complete. Activity marked as complete.')
+                handleComplete(activeActivity.id)
+              }}
+              onFocus={() => speak('Mark Complete button')}
+            >
               Mark Complete
             </button>
             <button
               className="btn btn-secondary"
-              onClick={() => announce('Progress saved. Feel free to switch activities.')}
+              onClick={() => {
+                playClick()
+                playSuccess()
+                speak('Clicking Save Progress. Progress saved.')
+                announce('Progress saved. Feel free to switch activities.')
+              }}
+              onFocus={() => speak('Save Progress button')}
             >
               Save Progress
             </button>

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useAnnouncement } from '../hooks/useAnnouncement'
+import { speak } from '../utils/voice'
+import { playClick, playModalOpen, playModalClose } from '../utils/sound'
 import '../styles/SignLanguage.css'
 
 const SignLanguage = () => {
@@ -13,9 +15,18 @@ const SignLanguage = () => {
 
   useFocusTrap(showModal, modalRef)
 
+  // Page load announcement
+  useEffect(() => {
+    speak('Welcome to the Sign Language page.')
+  }, [])
+
   useEffect(() => {
     checkSubscriptionStatus()
-  }, [])
+    // Play modal open sound when modal appears
+    if (showModal) {
+      playModalOpen()
+    }
+  }, [showModal])
 
   const checkSubscriptionStatus = () => {
     try {
@@ -54,10 +65,14 @@ const SignLanguage = () => {
   }
 
   const handleGoToSubscription = () => {
+    playClick()
+    speak('Clicking Subscribe Now. Navigating to Subscription page.')
     navigate('/subscription')
   }
 
   const handleGoToHome = () => {
+    playClick()
+    speak('Clicking Back to Home. Navigating to home page.')
     navigate('/home')
   }
 
@@ -74,6 +89,11 @@ const SignLanguage = () => {
           to="/home"
           className="back-button"
           aria-label="Back to home page"
+          onClick={() => {
+            playClick()
+            speak('Clicking Back to Home. Navigating to home page.')
+          }}
+          onFocus={() => speak('Back to Home button')}
         >
           ← Back to Home
         </Link>
@@ -110,7 +130,11 @@ const SignLanguage = () => {
           aria-modal="true"
           aria-labelledby="subscriptionModalTitle"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowModal(false)
+            if (e.target === e.currentTarget) {
+              playModalClose()
+              speak('Subscription modal closed.')
+              setShowModal(false)
+            }
           }}
         >
           <div className="subscription-modal" ref={modalRef}>
@@ -125,6 +149,7 @@ const SignLanguage = () => {
               <button
                 className="modal-button primary"
                 onClick={handleGoToSubscription}
+                onFocus={() => speak('View Plans and Subscribe button')}
                 aria-label="View subscription plans and subscribe"
               >
                 View Plans & Subscribe
@@ -132,6 +157,7 @@ const SignLanguage = () => {
               <button
                 className="modal-button secondary"
                 onClick={handleGoToHome}
+                onFocus={() => speak('Back to Home button')}
                 aria-label="Go back to home page"
               >
                 Back to Home
@@ -139,7 +165,13 @@ const SignLanguage = () => {
             </div>
             <button
               className="modal-close"
-              onClick={() => setShowModal(false)}
+              onClick={() => {
+                playClick()
+                playModalClose()
+                speak('Closing subscription modal.')
+                setShowModal(false)
+              }}
+              onFocus={() => speak('Close modal button')}
               aria-label="Close subscription modal"
             >
               ×

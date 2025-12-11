@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { isVoiceEnabled, toggleVoice as toggleVoiceUtil } from '../utils/voice'
 
 const AccessibilityContext = createContext()
 
@@ -12,6 +13,7 @@ export const AccessibilityProvider = ({ children }) => {
   const [textSize, setTextSize] = useState('normal') // 'normal', 'large', 'extra-large'
   const [highContrast, setHighContrast] = useState(false)
   const [dyslexiaMode, setDyslexiaMode] = useState(false)
+  const [voiceEnabled, setVoiceEnabled] = useState(false)
 
   // Load preferences from localStorage on mount
   useEffect(() => {
@@ -20,11 +22,13 @@ export const AccessibilityProvider = ({ children }) => {
       const storedTextSize = localStorage.getItem(TEXT_SIZE_STORAGE_KEY) || 'normal'
       const storedHighContrast = localStorage.getItem(HIGH_CONTRAST_STORAGE_KEY) === 'true'
       const storedDyslexiaMode = localStorage.getItem(DYSLEXIA_MODE_STORAGE_KEY) === 'true'
+      const storedVoiceEnabled = isVoiceEnabled()
 
       setAccessibilityMode(stored)
       setTextSize(storedTextSize)
       setHighContrast(storedHighContrast)
       setDyslexiaMode(storedDyslexiaMode)
+      setVoiceEnabled(storedVoiceEnabled)
     } catch (error) {
       console.warn('Unable to load accessibility preferences', error)
     }
@@ -109,15 +113,22 @@ export const AccessibilityProvider = ({ children }) => {
     }
   }
 
+  const toggleVoice = () => {
+    const newValue = toggleVoiceUtil()
+    setVoiceEnabled(newValue)
+  }
+
   const value = {
     accessibilityMode,
     textSize,
     highContrast,
     dyslexiaMode,
+    voiceEnabled,
     toggleAccessibilityMode,
     changeTextSize,
     toggleHighContrast,
     toggleDyslexiaMode,
+    toggleVoice,
   }
 
   return (

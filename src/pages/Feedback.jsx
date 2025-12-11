@@ -1,8 +1,15 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { speak } from '../utils/voice'
+import { playClick, playSuccess } from '../utils/sound'
 
 function Feedback() {
   const navigate = useNavigate()
+
+  // Page load announcement
+  useEffect(() => {
+    speak('Welcome to the Feedback page.')
+  }, [])
 
   // Feedback page is accessible to everyone - no authentication required
   // since feedback forms are public Google Forms
@@ -19,10 +26,22 @@ function Feedback() {
 
   const openFeedbackForm = (formType) => {
     const formUrl = feedbackForms[formType]
+    const formNames = {
+      'overall': 'Overall Website Feedback',
+      'activities': 'Learning Activities Feedback',
+      'accessibility': 'Accessibility Features Feedback',
+      'ux': 'User Experience Feedback',
+      'features': 'Feature Suggestions'
+    }
     
     if (formUrl) {
+      playClick()
+      playSuccess()
+      speak(`Clicking ${formNames[formType] || 'feedback form'}. Opening feedback form in a new tab.`)
       window.open(formUrl, '_blank', 'noopener,noreferrer')
     } else {
+      playClick()
+      speak('Feedback form not available. Please try again later.')
       alert('Feedback form not available. Please try again later.')
     }
   }
@@ -93,9 +112,14 @@ function Feedback() {
             cursor: 'pointer' 
           }} 
           onClick={() => {
+            playClick()
+            speak('Clicking BrightWords logo. Navigating to home page.')
             // Navigate directly to home - no authentication check needed
             navigate('/home')
           }}
+          onFocus={() => speak('BrightWords logo')}
+          role="button"
+          tabIndex={0}
         >
           <div style={{
             width: '40px',
@@ -117,9 +141,12 @@ function Feedback() {
         </div>
         <button
           onClick={() => {
+            playClick()
+            speak('Clicking Back to Home. Navigating to home page.')
             // Navigate directly to home - no authentication check needed
             navigate('/home')
           }}
+          onFocus={() => speak('Back to Home button')}
           style={{
             padding: '10px 20px',
             background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
@@ -248,6 +275,7 @@ function Feedback() {
                 </p>
                 <button
                   onClick={() => openFeedbackForm(card.formType)}
+                  onFocus={() => speak(`Open ${card.title} feedback form button`)}
                   style={{
                     background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
                     color: 'white',
