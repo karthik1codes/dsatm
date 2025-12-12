@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px 20px;
+  padding: 24px 16px;
   position: relative;
   overflow: hidden;
   /* Pastel gradient background matching homepage */
@@ -91,7 +91,7 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 520px;
+  max-width: 500px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -101,24 +101,23 @@
 
 /* Glassmorphism Card */
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 28px;
-  padding: 48px 40px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 24px;
+  padding: 32px 28px;
   box-shadow: 
-    0 20px 50px rgba(139, 92, 246, 0.15),
-    0 8px 24px rgba(236, 72, 153, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+    0 14px 32px rgba(139, 92, 246, 0.12),
+    0 6px 18px rgba(236, 72, 153, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.7);
   text-align: center;
   width: 100%;
-  max-width: 520px;
+  max-width: 460px;
   box-sizing: border-box;
   margin: 0 auto;
-  animation: slideInUp 0.6s ease-out;
+  animation: slideInUp 0.45s ease-out;
   position: relative;
-  overflow: visible;
+  overflow: hidden;
 }
 
 @keyframes slideInUp {
@@ -134,14 +133,14 @@
 
 /* Logo with Neon Glow */
 .login-logo {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .login-star {
-  font-size: 72px;
+  font-size: 56px;
   line-height: 1;
   display: inline-block;
   filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6));
@@ -163,12 +162,12 @@
 /* Typography - Matching Homepage */
 .login-title {
   font-family: 'Fredoka', cursive;
-  font-size: 42px;
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 600;
   color: #1F2937;
-  margin: 0 0 12px 0;
+  margin: 0 0 6px 0;
   line-height: 1.2;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
 }
 
 .login-brand {
@@ -181,11 +180,11 @@
 
 .login-subtitle {
   font-family: 'Nunito', sans-serif;
-  font-size: 18px;
+  font-size: 15px;
   color: #6B7280;
-  margin: 0 0 32px 0;
-  line-height: 1.6;
-  letter-spacing: 0.2px;
+  margin: 4px 0 20px 0;
+  line-height: 1.5;
+  letter-spacing: 0.1px;
 }
 
 /* Google Button Wrapper - No Clipping */
@@ -195,7 +194,7 @@
   justify-content: center;
   align-items: center;
   width: 100%;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
   position: relative;
   z-index: 1;
 }
@@ -221,7 +220,7 @@
   min-height: 48px !important;
   border-radius: 9999px !important;
   overflow: visible !important;
-  box-shadow: 0 14px 28px rgba(139, 92, 246, 0.25) !important;
+  box-shadow: none !important;
   transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease !important;
 }
 
@@ -236,7 +235,7 @@
   width: 100% !important;
   overflow: visible !important;
   border-radius: 9999px !important;
-  box-shadow: 0 14px 28px rgba(139, 92, 246, 0.25) !important;
+  box-shadow: none !important;
   transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease !important;
 }
 
@@ -257,10 +256,10 @@
 /* Hint Text */
 .login-hint {
   font-family: 'Nunito', sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   color: #9CA3AF;
-  margin: 0;
-  line-height: 1.5;
+  margin: 10px 0 0;
+  line-height: 1.4;
 }
 
 /* Loading Spinner */
@@ -368,5 +367,272 @@
 
   .login-loading-spinner {
     animation: spin 1.2s linear infinite;
+  }
+}
+
+/* ============================================
+   MOBILE LOGIN STYLES
+   ============================================ */
+
+/* Divider */
+.login-divider {
+  display: flex;
+  align-items: center;
+  margin: 16px 0 18px;
+  text-align: center;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #E5E7EB, transparent);
+}
+
+.login-divider span {
+  padding: 0 16px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  color: #9CA3AF;
+  font-weight: 500;
+}
+
+/* Mobile Login Button */
+.mobile-login-btn {
+  width: 100%;
+  padding: 14px 22px;
+  background: linear-gradient(135deg, #8B5CF6, #EC4899);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 8px 18px rgba(139, 92, 246, 0.25);
+  margin-top: 4px;
+}
+
+.mobile-login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+}
+
+.mobile-login-btn:active {
+  transform: translateY(0);
+}
+
+.mobile-login-btn:focus {
+  outline: 3px solid rgba(139, 92, 246, 0.4);
+  outline-offset: 2px;
+}
+
+/* Back Button */
+.back-to-main-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: transparent;
+  border: none;
+  color: #6B7280;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.back-to-main-btn:hover {
+  background: #F3F4F6;
+  color: #1F2937;
+}
+
+.back-to-main-btn:focus {
+  outline: 2px solid rgba(139, 92, 246, 0.4);
+  outline-offset: 2px;
+}
+
+/* Mobile Login Title */
+.mobile-login-title {
+  font-family: 'Fredoka', cursive;
+  font-size: 32px;
+  font-weight: 700;
+  color: #1F2937;
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.mobile-login-subtitle {
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  color: #6B7280;
+  margin: 0 0 32px 0;
+  line-height: 1.5;
+}
+
+/* Phone Input */
+.phone-input-wrapper {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.phone-input {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid #E5E7EB;
+  border-radius: 16px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 18px;
+  color: #1F2937;
+  background: #FFFFFF;
+  transition: all 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.phone-input:focus {
+  border-color: #8B5CF6;
+  box-shadow: 
+    0 0 0 4px rgba(139, 92, 246, 0.1),
+    0 4px 12px rgba(139, 92, 246, 0.15);
+}
+
+.phone-input:disabled {
+  background: #F3F4F6;
+  color: #9CA3AF;
+  cursor: not-allowed;
+}
+
+.phone-input::placeholder {
+  color: #D1D5DB;
+}
+
+/* Send OTP / Verify OTP Buttons */
+.send-otp-btn,
+.verify-otp-btn {
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #8B5CF6, #EC4899);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 9999px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  margin-top: 8px;
+}
+
+.send-otp-btn:hover:not(:disabled),
+.verify-otp-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+}
+
+.send-otp-btn:active:not(:disabled),
+.verify-otp-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.send-otp-btn:disabled,
+.verify-otp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.send-otp-btn:focus:not(:disabled),
+.verify-otp-btn:focus:not(:disabled) {
+  outline: 3px solid rgba(139, 92, 246, 0.4);
+  outline-offset: 2px;
+}
+
+/* Error Message */
+.login-error {
+  width: 100%;
+  padding: 12px 16px;
+  background: #FEE2E2;
+  border: 1px solid #FCA5A5;
+  border-radius: 12px;
+  color: #DC2626;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.login-success {
+  width: 100%;
+  padding: 12px 16px;
+  background: #DCFCE7;
+  border: 1px solid #86EFAC;
+  border-radius: 12px;
+  color: #16A34A;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* Resend OTP */
+.resend-otp-wrapper {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.resend-otp-btn {
+  background: transparent;
+  border: none;
+  color: #8B5CF6;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.resend-otp-btn:hover:not(:disabled) {
+  background: #F3F4F6;
+  color: #7C3AED;
+}
+
+.resend-otp-btn:disabled {
+  color: #9CA3AF;
+  cursor: not-allowed;
+}
+
+.resend-otp-btn:focus:not(:disabled) {
+  outline: 2px solid rgba(139, 92, 246, 0.4);
+  outline-offset: 2px;
+}
+
+/* Responsive Mobile Login */
+@media (max-width: 640px) {
+  .mobile-login-title {
+    font-size: 28px;
+  }
+
+  .mobile-login-subtitle {
+    font-size: 14px;
+  }
+
+  .phone-input {
+    font-size: 16px;
+    padding: 14px 18px;
+  }
+
+  .back-to-main-btn {
+    top: 16px;
+    left: 16px;
+    font-size: 13px;
+    padding: 6px 10px;
   }
 }

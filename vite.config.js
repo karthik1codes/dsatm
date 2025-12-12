@@ -55,9 +55,22 @@ export default defineConfig({
     host: '0.0.0.0', // Listen on all network interfaces (IPv4 and IPv6)
     strictPort: true,
     open: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      }
+    },
     // Configure middleware to handle redirect and CSP headers
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
+        // Don't interfere with API routes - let proxy handle them
+        if (req.url.startsWith('/api/')) {
+          next()
+          return
+        }
+        
         // Handle /superpower route - redirect to the login page
         if (req.url === '/superpower' || req.url === '/superpower/') {
           res.writeHead(302, {
